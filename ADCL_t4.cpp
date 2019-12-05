@@ -34,167 +34,6 @@ const uint8_t t4_pin_to_channel[] = {
   0x80 + 4 // 27/A13 AD_B1_15 - only on ADC2, 4
 };
 
-#if 0
-extern int T4AnalogRead(uint8_t pin, uint8_t adc_num) {
-  if (pin > sizeof(t4_pin_to_channel)) return 0;
-  // I believe all the calibration should be done by now
-  uint8_t ch = t4_pin_to_channel[pin];
-  switch (adc_num) {
-    case 1:
-      if (ch & 0x80) return 0;  // does not handle this pin
-      break;
-    case 2:
-      if (ch & 0x40) return 0;  // does not handle this pin
-      break;
-    default:
-      adc_num =  (ch & 0x80) ? 2 : 1;
-  }
-  if (adc_num == 1) {
-    ADC1_HC0 = ch & 0x3f;
-    while (!(ADC1_HS & ADC_HS_COCO0)) ; // wait
-    return ADC1_R0;
-  } else {
-    ADC2_HC0 = ch & 0x3f;
-    while (!(ADC2_HS & ADC_HS_COCO0)) ; // wait
-    return ADC2_R0;
-  }
-}
-
-bool T4AnalogReadBoth(uint8_t adc1_pin, uint16_t &adc1_val, uint8_t adc2_pin, uint16_t &adc2_val)
-{
-  if (adc1_pin > sizeof(t4_pin_to_channel)) return false;
-  uint8_t ch_adc1 = t4_pin_to_channel[adc1_pin];
-  if (ch_adc1 & 0x80) return false; // only valid on ADC2
-
-  if (adc2_pin > sizeof(t4_pin_to_channel)) return false;
-  uint8_t ch_adc2 = t4_pin_to_channel[adc2_pin];
-  if (ch_adc2 & 0x40) return false; // only valid on ADC1
-
-  // Now lets start the conversions...
-  ADC1_HC0 = ch_adc1 & 0x3f;
-  ADC2_HC0 = ch_adc2 & 0x3f;
-
-  // now wait for both to complete
-  while (!(ADC1_HS & ADC_HS_COCO0) || !(ADC2_HS & ADC_HS_COCO0)) ; // wait
-  adc1_val = ADC1_R0;
-  adc2_val = ADC2_R0;
-  return true;
-}
-
-bool T4AnalogReadStart(uint8_t pin, uint8_t adc_num)
-{
-  // warning not checking to see if already busy or ...
-  if (pin > sizeof(t4_pin_to_channel)) return false;
-  // I believe all the calibration should be done by now
-  uint8_t ch = t4_pin_to_channel[pin];
-  switch (adc_num) {
-    case 1:
-      if (ch & 0x80) return false;  // does not handle this pin
-      break;
-    case 2:
-      if (ch & 0x40) return false;  // does not handle this pin
-      break;
-    default:
-      return false;
-  }
-  if (adc_num == 1) ADC1_HC0 = ch & 0x3f;
-  else ADC2_HC0 = ch & 0x3f;
-  return true;
-}
-
-int T4AnalogReadComplete(uint8_t adc_num, bool wait_complete) {
-  if (adc_num == 1) {
-    if (!wait_complete && !(ADC1_HS & ADC_HS_COCO0)) return -1;
-    while (!(ADC1_HS & ADC_HS_COCO0)) ; // wait
-    return ADC1_R0;
-  } else {
-    if (!wait_complete && !(ADC2_HS & ADC_HS_COCO0)) return -1;
-    while (!(ADC2_HS & ADC_HS_COCO0)) ; // wait
-    return ADC2_R0;
-  }
-}
-
-
-void T4AnalogReadRes(unsigned int bits, uint8_t adc_num)
-{
-  uint32_t tmp32, mode;
-
-  if (bits == 8) {
-    // 8 bit conversion (17 clocks) plus 8 clocks for input settling
-    mode = ADC_CFG_MODE(0) | ADC_CFG_ADSTS(3);
-  } else if (bits == 0x88)  {
-    // 8 bit fast conversion
-    mode = ADC_CFG_MODE(0) | ADC_CFG_ADSTS(0);
-  } else if (bits == 10) {
-    // 10 bit conversion (17 clocks) plus 20 clocks for input settling
-    mode = ADC_CFG_MODE(1) | ADC_CFG_ADSTS(2) | ADC_CFG_ADLSMP;
-  } else {
-    // 12 bit conversion (25 clocks) plus 24 clocks for input settling
-    mode = ADC_CFG_MODE(2) | ADC_CFG_ADSTS(3) | ADC_CFG_ADLSMP;
-  }
-
-  if (adc_num == 1) {
-    tmp32  = (ADC1_CFG & (0xFFFFFC00));
-    tmp32 |= (ADC1_CFG & (0x03));  // ADICLK
-    tmp32 |= (ADC1_CFG & (0xE0));  // ADIV & ADLPC
-
-    tmp32 |= mode;
-    ADC1_CFG = tmp32;
-  } else {
-    tmp32  = (ADC2_CFG & (0xFFFFFC00));
-    tmp32 |= (ADC2_CFG & (0x03));  // ADICLK
-    tmp32 |= (ADC2_CFG & (0xE0));  // ADIV & ADLPC
-    tmp32 |= mode;
-    ADC2_CFG = tmp32;
-  }
-}
-
-void T4AnalogReadAveraging(unsigned int num, uint8_t adc_num)
-{
-  uint32_t mode, mode1;
-
-  //disable averaging, ADC1 and ADC2
-  if (adc_num == 1 ) {
-    ADC1_GC &= ~0x20;
-    mode = ADC1_CFG & ~0xC000;
-    if (num >= 32) {
-      mode |= ADC_CFG_AVGS(3);
-    } else if (num >= 16) {
-      mode |= ADC_CFG_AVGS(2);
-    } else if (num >= 8) {
-      mode |= ADC_CFG_AVGS(1);
-    } else if (num >= 4) {
-      mode |= ADC_CFG_AVGS(0);
-    } else {
-      mode |= 0;
-    }
-    ADC1_CFG = mode;
-    if (num >= 4) {
-      ADC1_GC |= ADC_GC_AVGE;// turns on averaging
-    }
-  } else {
-    ADC2_GC &= ~0x20;
-    mode1 = ADC2_CFG & ~0xC000;
-
-    if (num >= 32) {
-      mode1 |= ADC_CFG_AVGS(3);
-    } else if (num >= 16) {
-      mode1 |= ADC_CFG_AVGS(2);
-    } else if (num >= 8) {
-      mode1 |= ADC_CFG_AVGS(1);
-    } else if (num >= 4) {
-      mode1 |= ADC_CFG_AVGS(0);
-    } else {
-      mode1 |= 0;
-    }
-
-    ADC2_CFG = mode1;
-    if (num >= 4) {
-      ADC2_GC |= ADC_GC_AVGE;// turns on averaging
-    }
-  }
-}
-#endif
 //==========================================================================================
 //class ADCL
 //==========================================================================================
@@ -307,11 +146,32 @@ uint8_t ADCL::getResolution(int8_t adc_num)
     but if F_BUS<F_ADCK, you can't use VERY_HIGH_SPEED for sampling speed.
       \param adc_num ADC number to change.
   */
-  void ADCL::setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num)
+void ADCL::setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num)
 {
+  uint32_t adc_cfg_adsts;
+  switch (speed) {
+   case ADC_CONVERSION_SPEED::VERY_LOW_SPEED:    /*!< is guaranteed to be the lowest possible speed within specs for resolutions less than 16 bits (higher than 1 MHz). */
+      adc_cfg_adsts = ADC_CFG_ADSTS(3);
+      break;
+   case ADC_CONVERSION_SPEED::LOW_SPEED:     /*!< is guaranteed to be the lowest possible speed within specs for all resolutions (higher than 2 MHz). */
+      adc_cfg_adsts = ADC_CFG_ADSTS(2);
+      break;
+   case ADC_CONVERSION_SPEED::MED_SPEED:     /*!< is always >= LOW_SPEED and <= HIGH_SPEED. */
+      adc_cfg_adsts = ADC_CFG_ADSTS(1);
+      break;
+   default:   
+   case ADC_CONVERSION_SPEED::HIGH_SPEED:    /*!< is guaranteed to be the highest possible speed within specs for resolutions less than 16 bits (lower */
+      adc_cfg_adsts = ADC_CFG_ADSTS(0);
+    break;
+      break;
+
+  }
+  if (adc_num) {
+    ADC2_CFG = (ADC2_CFG & ~(ADC_CFG_ADSTS(3))) | adc_cfg_adsts;
+  } else {
+    ADC1_CFG = (ADC1_CFG & ~(ADC_CFG_ADSTS(3))) | adc_cfg_adsts;    
+  }
 }
-
-
 
 
   //! Sets the sampling speed
@@ -327,6 +187,25 @@ uint8_t ADCL::getResolution(int8_t adc_num)
   */
   void ADCL::setSamplingSpeed(ADC_SAMPLING_SPEED speed, int8_t adc_num)
 {
+  uint32_t adc_cfg_adlsmp = 0;
+  switch (speed) {
+    case ADC_SAMPLING_SPEED::VERY_LOW_SPEED: /*!< adds +16 ADCK. */
+    case ADC_SAMPLING_SPEED::LOW_SPEED: /*!< adds +16 ADCK. */
+      adc_cfg_adlsmp = ADC_CFG_ADLSMP;
+      break;
+    case ADC_SAMPLING_SPEED::MED_SPEED: /*!< adds +10 ADCK. */
+      adc_cfg_adlsmp = ADC_CFG_ADLSMP | ADC_CFG_ADHSC;
+      break;
+    case ADC_SAMPLING_SPEED::VERY_HIGH_SPEED: /*!< adds +6 ADCK. */
+    case ADC_SAMPLING_SPEED::HIGH_SPEED: /*!< adds +6 ADCK. */
+      adc_cfg_adlsmp = ADC_CFG_ADHSC;
+      break;
+  }
+  if (adc_num) {
+    ADC2_CFG = (ADC2_CFG & ~(ADC_CFG_ADLSMP | ADC_CFG_ADHSC)) | adc_cfg_adlsmp;
+  } else {
+    ADC1_CFG = (ADC1_CFG & ~(ADC_CFG_ADLSMP | ADC_CFG_ADHSC)) | adc_cfg_adlsmp;    
+  }
 }
 
 

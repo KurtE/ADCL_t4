@@ -1,16 +1,6 @@
 #ifndef ADCL_T4_H
 #define ADCL_T4_H
 
-#if 0
-extern int T4AnalogRead(uint8_t pin, uint8_t adc_num = 0);
-extern bool T4AnalogReadBoth(uint8_t adc1_pin, uint16_t &adc1_val, uint8_t adc2_pin, uint16_t &adc2_val);
-
-extern bool T4AnalogReadStart(uint8_t pin, uint8_t adc_num);
-extern int T4AnalogReadComplete(uint8_t adc_num, bool wait_complete = false);
-
-extern void T4AnalogReadRes(unsigned int bits, uint8_t adc_num);
-extern void T4AnalogReadAveraging(unsigned int num, uint8_t adc_num);
-#endif
 //-------------------------------------------
 // Extract from ADC library
 //-------------------------------------------
