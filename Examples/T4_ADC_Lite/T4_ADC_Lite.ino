@@ -12,7 +12,8 @@ void setup() {
   Serial.println("Quick and dirty T4 Analog Read stuff");
 
   adc = new ADCL;
-
+  //ADACK_20_0_H is currently default in analog_init on startup
+  adc->setAdcClockSpeed(ADC_CONVERSION_SPEED::HIGH_SPEED);
 }
   
 
