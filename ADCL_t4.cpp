@@ -173,6 +173,130 @@ void ADCL::setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num)
   }
 }
 
+void ADCL::setAdcClockSpeed(ADC_CONVERSION_SPEED speed1)
+{
+	
+	uint32_t adc_cfg_div;
+	uint8_t div, clk;
+	
+	uint8_t ADIV, ACLK;
+	unsigned  mask;
+	//ACLK
+	mask = ((1 << 2) - 1) << 0;
+	ACLK = ADC1_CFG & mask;
+	//DIV
+	mask = ((1 << 2) - 1) << 5;
+	ADIV = (ADC1_CFG & mask) >> 5;
+	
+	if(speed1==clock_speed) { // no change
+		return;
+	}
+	//Serial.printf("Speed: %d, %d\n",clock_speed, speed1);
+	//if (calibrating) wait_for_cal();
+
+	// internal asynchronous clock settings: fADK = 2.4, 4.0, 5.2 or 6.2 MHz
+	if( (speed1 == ADC_CONVERSION_SPEED::ADACK_1_25_N) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_2_5_N) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_5_0_N) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_10_0_N)) {
+		adc_cfg_div = ADC_CFG_ADICLK(3);
+		clk = 3;
+		if(speed1 == ADC_CONVERSION_SPEED::ADACK_1_25_N) {
+			adc_cfg_div = ADC_CFG_ADIV(3) | adc_cfg_div;
+			div = 3;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_2_5_N) {
+			adc_cfg_div = ADC_CFG_ADIV(2) | adc_cfg_div;
+			div = 2;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_5_0_N) {
+			adc_cfg_div = ADC_CFG_ADIV(1) | adc_cfg_div;
+			div = 1;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_10_0_N) {
+			adc_cfg_div = ADC_CFG_ADIV(0) | adc_cfg_div;
+			div = 0;
+		}
+		//ADC1
+		ADC1_CFG = (ADC1_CFG & ~ADC_CFG_ADIV(div) & ~ADC_CFG_ADICLK(clk) & ~ADC_CFG_ADHSC) | adc_cfg_div;
+	//need cal?
+		ADC2_CFG = (ADC2_CFG & ~ADC_CFG_ADIV(div) & ~ADC_CFG_ADICLK(clk) & ~ADC_CFG_ADHSC) | adc_cfg_div;
+	//need cal?
+		clock_speed = speed1;
+		return;
+	}
+
+	//ADHSC is set by default in analog_init so only have to deal with clock 
+	//and divider
+	if( (speed1 == ADC_CONVERSION_SPEED::ADACK_2_5_H) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_5_0_H) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_10_0_H) ||
+		(speed1 == ADC_CONVERSION_SPEED::ADACK_20_0_H)) {
+		adc_cfg_div = ADC_CFG_ADICLK(3);
+		clk = 3;
+		if(speed1 == ADC_CONVERSION_SPEED::ADACK_2_5_H) {
+			adc_cfg_div = ADC_CFG_ADIV(3) | adc_cfg_div;
+			div = 3;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_5_0_H) {
+			adc_cfg_div = ADC_CFG_ADIV(2) | adc_cfg_div;
+			div = 2;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_10_0_H) {
+			adc_cfg_div = ADC_CFG_ADIV(1) | adc_cfg_div;
+			div = 1;
+		} else if(speed1 == ADC_CONVERSION_SPEED::ADACK_20_0_H) {
+			adc_cfg_div = ADC_CFG_ADIV(0) | adc_cfg_div;
+			div = 0;
+		}
+		//ADC1
+		ADC1_CFG = (ADC1_CFG & ~ADC_CFG_ADIV(div) & ~ADC_CFG_ADICLK(clk)) | adc_cfg_div;
+//need cal?
+		ADC2_CFG = (ADC2_CFG & ~ADC_CFG_ADIV(div) & ~ADC_CFG_ADICLK(clk)) | adc_cfg_div;
+//need cal?
+		clock_speed = speed1;
+		return;
+	}
+	
+	switch (speed1) {
+	case ADC_CONVERSION_SPEED::VERY_LOW_SPEED:    /*!< is guaranteed to be the lowest possible speed within specs for resolutions less than 16 bits (higher than 1 MHz). */
+	  adc_cfg_div = ADC_CFG_ADIV(3) | ADC_CFG_ADICLK(1); // use IPG/16
+	  div = 3; clk = 1;
+	  break;
+	case ADC_CONVERSION_SPEED::LOW_SPEED:     /*!< is guaranteed to be the lowest possible speed within specs for all resolutions (higher than 2 MHz). */
+	  adc_cfg_div = ADC_CFG_ADIV(2) | ADC_CFG_ADICLK(1); // use IPG/8
+	  div = 2; clk = 1;
+	  break;
+	case ADC_CONVERSION_SPEED::MED_SPEED:     /*!< is always >= LOW_SPEED and <= HIGH_SPEED. */
+	  adc_cfg_div = ADC_CFG_ADIV(1) | ADC_CFG_ADICLK(1); // use IPG/4
+	  div = 1; clk = 1;
+	  break;
+	case ADC_CONVERSION_SPEED::HIGH_SPEED:    /*!< is guaranteed to be the highest possible speed within specs for resolutions less than 16 bits (lower */
+	  adc_cfg_div = ADC_CFG_ADIV(0) | ADC_CFG_ADICLK(1); // use IPG/2
+	  div = 0; clk = 1;
+	  break;
+	case ADC_CONVERSION_SPEED::VERY_HIGH_SPEED:    // this speed is most likely out of specs, so accuracy can be bad
+	  adc_cfg_div = ADC_CFG_ADIV(0) | ADC_CFG_ADICLK(0); // use IPG
+	  div = 0; clk = 0;
+	  break;
+	default:   // low speed
+	  adc_cfg_div = ADC_CFG_ADIV(2) | ADC_CFG_ADICLK(1); // use IPG/8
+	  div = 2; clk = 1;
+	  break;
+
+	}
+  
+  	//Serial.printf("DIV: %d, CLK: %d (%08x %08x)\n", div, clk, ADC1_CFG, ADC1_GC);
+
+	//ADC1
+	ADC1_CFG = (ADC1_CFG & (~ADC_CFG_ADIV(ADIV)) & (~ADC_CFG_ADICLK(ACLK))) | adc_cfg_div;
+	//calibrating = 1;
+	while (ADC1_GC & ADC_GC_CAL) ;
+	//calibrating = 0;	
+	ADC2_CFG = (ADC2_CFG & (~ADC_CFG_ADIV(ADIV)) & (~ADC_CFG_ADICLK(ACLK))) | adc_cfg_div;
+	//calibrating = 1;
+	while (ADC2_GC & ADC_GC_CAL) ;
+	//calibrating = 0;
+	
+  	//Serial.printf("DIV: %d, CLK: %d (%08x %08x)\n", div, clk, ADC1_CFG, ADC1_GC);
+	clock_speed = speed1;
+
+}
 
   //! Sets the sampling speed
   /** Increase the sampling speed for low impedance sources, decrease it for higher impedance ones.
@@ -207,6 +331,7 @@ void ADCL::setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num)
     ADC1_CFG = (ADC1_CFG & ~(ADC_CFG_ADLSMP | ADC_CFG_ADHSC)) | adc_cfg_adlsmp;    
   }
 }
+
 
 
 

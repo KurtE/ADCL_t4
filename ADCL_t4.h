@@ -55,7 +55,16 @@ enum class ADC_CONVERSION_SPEED : uint8_t {
                             except for Teensy 3.6 (NOT 3.5), for which the maximum is 24 MHz. */
     VERY_HIGH_SPEED, /*!< may be out of specs */
 
+	ADACK_1_25_N, /*!< 1.25 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), Normal Mode*/
+	ADACK_2_5_N,  /*!< 2.5 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), Normal Mode*/
+	ADACK_5_0_N, /*!< 5.0 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), Normal Mode*/
+	ADACK_10_0_N, /*!< 10.0 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), Normal Mode*/
+	ADACK_2_5_H,  /*!< 2.5 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), High Speed*/
+	ADACK_5_0_H, /*!< 5.0 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), High Speed*/
+	ADACK_10_0_H, /*!< 10.0 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), High Speed*/
+	ADACK_20_0_H /*!< 20.0 MHz asynchronous ADC clock (independent of the global clocks F_CPU or F_BUS), High Speed*/
 };
+
 /*! ADC sampling speed.
 *   It selects how many ADCK clock cycles to add.
 */
@@ -179,7 +188,7 @@ class ADCL
     /** Default constructor */
     ADCL() {};
 
-
+	ADC_CONVERSION_SPEED clock_speed;
 
     /////////////// METHODS TO SET/GET SETTINGS OF THE ADC ////////////////////
 
@@ -239,6 +248,9 @@ class ADCL
     */
     void setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num = -1);
 
+	void setAdcClockSpeed(ADC_CONVERSION_SPEED speed1);
+
+	
 
     //! Sets the sampling speed
     /** Increase the sampling speed for low impedance sources, decrease it for higher impedance ones.
