@@ -34,6 +34,10 @@ const uint8_t t4_pin_to_channel[] = {
   0x80 + 4 // 27/A13 AD_B1_15 - only on ADC2, 4
 };
 
+//analog compare ACMP3 and ACMP4 available on pins 26 and 27
+uint8_t acmp3_inp_pins[] = {18, 17, 255, 255, 255, 23, 255};
+uint8_t acmp4_inp_pins[] = {18, 17, 255, 255, 255, 20, 26 };
+
 //==========================================================================================
 //class ADCL
 //==========================================================================================
@@ -635,5 +639,200 @@ Sync_result ADCL::readSynchronizedSingle()
 
     //! Stops synchronous continuous conversion
  //   void ADCL::stopSynchronizedContinuous();
+ 
+ 
+//! enable the compare function
+int ADCL::enableCompare(uint8_t acmp_pin, uint8_t input_pin)
+{	
+	uint8_t INx = 255;
+	
+	if(acmp_pin == ACMP3){
+		for(uint8_t i = 0; i < sizeof(acmp3_inp_pins); i++){
+			if(input_pin == acmp3_inp_pins[i]){
+				INx = i;
+			}
+		}
+		if (INx == 255)  return ADC_ERROR_VALUE;
+		
+		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_ON);  // ACMP on
+		CMP3_MUXCR = CMP_MUXCR_PSEL(INx) | CMP_MUXCR_MSEL(7);
+		CMP3_CR1 = CMP_CR1_ENABLE ;   // enable
+		CMP3_DACCR = DACCR_ENABLE  | 32 | 0x40;  // 3v3/2 and enable
+		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
+		pinMode(ACMP3, OUTPUT);
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_14 = 1;  // ALT 1 ACMP3_OUT
+	} else if(acmp_pin == ACMP4){
+		for(uint8_t i = 0; i < sizeof(acmp4_inp_pins); i++){
+			if(input_pin == acmp4_inp_pins[i]){
+				INx = i;
+			}
+		}
+		if (INx == 255)  return ADC_ERROR_VALUE;
+		
+		CCM_CCGR3 |= CCM_CCGR3_ACMP4(CCM_CCGR_ON);  // ACMP on
+		CMP4_MUXCR = CMP_MUXCR_PSEL(INx) | CMP_MUXCR_MSEL(7);
+		CMP4_CR1 = CMP_CR1_ENABLE ;   // enable
+		CMP4_DACCR = DACCR_ENABLE  | 32 | 0x40;  // 3v3/2 and enable
+		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
+		pinMode(ACMP4, OUTPUT);
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_15 = 1;  // ALT 1 ACMP3_OUT 
+	} else {
+		return ADC_ERROR_VALUE;
+	}
+	
+	return 0;
+}
+			
+//! Disable the compare function
+void ADCL::disableCompare(uint8_t acmp_pin)
+{
+	if(acmp_pin == ACMP3){
+		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_OFF);  // ACMP on
+		CMP3_CR1 = CMP_CR1_DISABLE ;
+	} else if(acmp_pin == ACMP4){
+		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_OFF);  // ACMP on
+		CMP4_CR1 = CMP_CR1_DISABLE ;
+	}
+}
+
+//! Enable the compare function to a single value
+/** A conversion will be completed only when the ADC value
+*  is >= compValue (greaterThan=1) or < compValue (greaterThan=0)
+*  Call it after changing the resolution
+*  Use with interrupts or poll conversion completion with isComplete()
+*	1.  compare true if the result is less than the value1. (greaterThan=0. mode0)
+*	2.  compare true if the result is greater than or equal to value1.(greaterThan=1. mode1)
+*   Setting value1(0-4095) for hardware compare mode. 
+*   \param compValue value to compare
+*   \param greaterThan or equal to true or false
+*/
+void ADCL::enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterThan)
+{
+    uint32_t tmp32;
+
+	if(adc_num == 0){
+		tmp32 = ADC1_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | 		ADC_GC_ACREN_MASK);
+		/* Enable the feature. */
+		tmp32 |= ADC_GC_ACFE_MASK;
+		
+		if(greaterThan == true)
+				tmp32 |= ADC_GC_ACFGT_MASK;
+				
+		ADC1_GC = tmp32;
+
+		/* Load the compare values. */
+		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV2(compValue);
+		ADC1_CV = tmp32;	
+	} else {
+		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | 		ADC_GC_ACREN_MASK);
+		/* Enable the feature. */
+		tmp32 |= ADC_GC_ACFE_MASK;
+		
+		if(greaterThan == true)
+				tmp32 |= ADC_GC_ACFGT_MASK;
+				
+		ADC2_GC = tmp32;
+
+		/* Load the compare values. */
+		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV2(compValue);
+		ADC2_CV = tmp32;	
+	}
+
+}
+
+
+//! Enable the compare function to a range
+/** A conversion will be completed only when the ADC value is inside (insideRange=1) or outside (=0)
+*  the range given by (lowerLimit, upperLimit),including (inclusive=1) the limits or not (inclusive=0).
+*
+*  1.  Value1 <= Value2, compare true if the result is less than value1 OR the result is Greater than value2. (inclusive = 0, insideRange = 0, mode2)
+*  2.  Value1 >  Value2, compare true if the result is less than value1 AND the result is Greater than value2. (inclusive = 0, insideRange = 1, mode3)
+*  3.  Value1 <= Value2, compare true if the result is greater than or equal to value1 AND the result is less than or equal to value2.   (inclusive = 1, insideRange = 1, mode4)
+*  4.  Value1 >  Value2, compare true if the result is greater than or equal to value1 OR the result is less than or equal to value2.   (inclusive = 1, insideRange = 0, mode5)
+*	
+*  Call it after changing the resolution
+*  Use with interrupts or poll conversion completion with isComplete()
+*   \param lowerLimit lower value to compare
+*   \param upperLimit upper value to compare
+*   \param insideRange true or false
+*   \param inclusive true or false
+*/
+void ADCL::enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive)
+{
+	uint8_t mode = 0;
+	uint32_t tmp32;
+	
+	if(insideRange == 0 && inclusive == 0) mode = 2;
+	if(insideRange == 1 && inclusive == 0) mode = 3;
+	if(insideRange == 1 && inclusive == 1) mode = 4;
+	if(insideRange == 0 && inclusive == 1) mode = 5;
+	
+	if(adc_num == 0){
+		tmp32 = ADC1_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
+
+		/* Enable the feature. */
+		tmp32 |= ADC_GC_ACFE_MASK;
+
+		/* Select the hardware compare working mode. */
+		switch (mode)
+		{
+			case 0:
+				break;
+			case 1:
+				break;
+			case 2:
+				tmp32 |= ADC_GC_ACREN_MASK;
+				break;
+			case 3:
+				tmp32 |= ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK;
+				break;
+			default:
+				break;
+		}
+		ADC1_GC = tmp32;
+
+		/* Load the compare values. */
+		tmp32 = ADC_CV_CV1(lowerLimit) | ADC_CV_CV2(upperLimit);
+		ADC1_CV = tmp32;
+	} else {
+		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
+
+		/* Enable the feature. */
+		tmp32 |= ADC_GC_ACFE_MASK;
+
+		/* Select the hardware compare working mode. */
+		switch (mode)
+		{
+			case 0:
+				break;
+			case 1:
+				break;
+			case 2:
+				tmp32 |= ADC_GC_ACREN_MASK;
+				break;
+			case 3:
+				tmp32 |= ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK;
+				break;
+			default:
+				break;
+		}
+		ADC2_GC = tmp32;
+
+		/* Load the compare values. */
+		tmp32 = ADC_CV_CV1(lowerLimit) | ADC_CV_CV2(upperLimit);
+		ADC2_CV = tmp32;
+	}
+	
+}
+
+int ADCL::getAdcCompareRes(uint8_t acmp_pin)
+{
+	if(acmp_pin == ACMP3){
+		return CMP3_SCR & CMP_SCR_COUT;
+	} else if(acmp_pin == ACMP4){
+		return CMP4_SCR & CMP_SCR_COUT;
+	}
+	return -1;
+}
 
 #endif

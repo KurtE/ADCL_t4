@@ -167,11 +167,23 @@ namespace ADC_Error {
 }
 using ADC_Error::ADC_ERROR;
 
+//analog compare
+#define CMP_MUXCR_PSEL(n)       (uint8_t)(((n) & 0x07) << 3) // Plus Input Mux Control //input select 290-291
+#define CMP_MUXCR_MSEL(n)       (uint8_t)(((n) & 0x07) << 0) // Minus Input Mux Control  //set to 7 always
+
+#define DACCR_ENABLE (1<<7)		//Enable the DAC
+#define DACCR_DISABLE (0<<7)
+#define CMP_CR1_ENABLE (1<<0)	//Enable Analog Comparator module
+#define CMP_CR1_DISABLE (0<<0)
+#define CMP_SCR_COUT (1<<0)
+
+#define ADC_GC_ACFE_MASK                         (0x10U)
+#define ADC_GC_ACFGT_MASK                        (0x8U)
+#define ADC_GC_ACREN_MASK                        (0x4U)
+
 
 // debug mode: blink the led light
 #define ADC_debug 0
-
-
 
 
 /** Class ADC: Controls the Teensy 3.x ADC
@@ -187,7 +199,9 @@ class ADCL
 
     /** Default constructor */
     ADCL() {};
-
+	//analog compare ACMP3 and ACMP4 available on pins 26 and 27
+	static const uint8_t ACMP3 = 26;
+	static const uint8_t ACMP4 = 27;
 	ADC_CONVERSION_SPEED clock_speed;
 
     /////////////// METHODS TO SET/GET SETTINGS OF THE ADC ////////////////////
@@ -476,6 +490,46 @@ class ADCL
 
     //! Stops synchronous continuous conversion
     void stopSynchronizedContinuous();
+	
+    //! Enable the compare function to a single value
+    /** A conversion will be completed only when the ADC value
+    *  is >= compValue (greaterThan=1) or < compValue (greaterThan=0)
+    *  Call it after changing the resolution
+    *  Use with interrupts or poll conversion completion with isComplete()
+	*	1.  compare true if the result is less than the value1. (greaterThan=0. mode0)
+	*	2.  compare true if the result is greater than or equal to value1.(greaterThan=1. mode1)
+    *   \param compValue value to compare
+    *   \param greaterThan or equal to true or false
+    */
+    void enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterThan);
+
+    //! Enable the compare function to a range
+    /** A conversion will be completed only when the ADC value is inside (insideRange=1) or outside (=0)
+    *  the range given by (lowerLimit, upperLimit),including (inclusive=1) the limits or not (inclusive=0).
+    *
+	*  1.  Value1 <= Value2, compare true if the result is less than value1 OR the result is Greater than value2. (inclusive = 0, insideRange = 0, mode2)
+	*  2.  Value1 >  Value2, compare true if the result is less than value1 AND the result is Greater than value2. (inclusive = 0, insideRange = 1, mode3)
+	*  3.  Value1 <= Value2, compare true if the result is greater than or equal to value1 AND the result is less than or equal to value2.   (inclusive = 1, insideRange = 1, mode4)
+	*  4.  Value1 >  Value2, compare true if the result is greater than or equal to value1 OR the result is less than or equal to value2.   (inclusive = 1, insideRange = 0, mode5)
+	*	
+    *  Call it after changing the resolution
+    *  Use with interrupts or poll conversion completion with isComplete()
+    *   \param lowerLimit lower value to compare
+    *   \param upperLimit upper value to compare
+    *   \param insideRange true or false
+    *   \param inclusive true or false
+    */
+    void enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive);
+
+	int getAdcCompareRes(uint8_t acmp_pin);
+
+    //! Disable the compare function
+    void disableCompare(uint8_t acmp_pin);
+	
+    //! enable the compare function
+    int enableCompare(uint8_t acmp_pin, uint8_t input_pin);
+
+	
 
 #endif
 
