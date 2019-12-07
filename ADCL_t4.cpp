@@ -3,7 +3,7 @@
 // modified version from T4 analog.c
 // 0x80 bit - Only on ADC2
 // 0x40 bit - only on ADC1
-const uint8_t t4_pin_to_channel[] = {
+const uint8_t  ADCL::t4_pin_to_channel[] = {
   7,  // 0/A0  AD_B1_02
   8,  // 1/A1  AD_B1_03
   12, // 2/A2  AD_B1_07
@@ -41,6 +41,19 @@ uint8_t acmp4_inp_pins[] = {18, 17, 255, 255, 255, 20, 26 };
 //==========================================================================================
 //class ADCL
 //==========================================================================================
+uint8_t ADCL::mapPinToChannel(uint8_t pin, int8_t adc_num) 
+{
+  if (pin > sizeof(t4_pin_to_channel)) return 0xff;
+  uint8_t ch = t4_pin_to_channel[pin];
+
+  if (!(ch & 0x3f) || (adc_num == -1)) return ch; // simply return raw...
+
+  if (adc_num == 0) {
+    if (ch & 0x80) return 0xff;
+  } else if (ch & 0x40) return 0xff;
+  return ch & 0x3f;
+}
+
   /////////////// METHODS TO SET/GET SETTINGS OF THE ADC ////////////////////
 
   //! Set the voltage reference you prefer, default is vcc
@@ -391,6 +404,58 @@ void ADCL::setAdcClockSpeed(ADC_CONVERSION_SPEED speed1)
   }
 }
 
+// Enable interrupts
+/* An IRQ_ADC0 Interrupt will be raised when the conversion is completed
+*  (including hardware averages and if the comparison (if any) is true).
+*/
+void ADCL::enableInterrupts(int8_t adc_num) 
+{
+    if(adc_num ==1 ) { 
+      ADC2_HC0 |= ADC_HC_AIEN;  // enable the interrupt
+    } else {
+      ADC1_HC0 |= ADC_HC_AIEN;  // enable the interrupt      
+    }
+}
+
+// Disable interrupts
+void ADCL::disableInterrupts(int8_t adc_num) 
+{
+    if(adc_num ==1 ) { 
+      ADC2_HC0 &= ~ADC_HC_AIEN;  // enable the interrupt
+    } else {
+      ADC1_HC0 &= ~ADC_HC_AIEN;  // enable the interrupt      
+    }
+}
+
+
+
+//! Enable DMA request
+/** An ADC DMA request will be raised when the conversion is completed
+*  (including hardware averages and if the comparison (if any) is true).
+*   \param adc_num ADC number to change.
+*/
+void ADCL::enableDMA(int8_t adc_num) 
+{
+    if(adc_num ==1 ) { 
+      ADC2_GC |= ADC_GC_DMAEN;  // enable the interrupt
+    } else {
+      ADC1_GC |= ADC_GC_DMAEN;  // enable the interrupt      
+    }
+}
+
+//! Disable ADC DMA request
+/**
+*   \param adc_num ADC number to change.
+*/
+void ADCL::disableDMA(int8_t adc_num)
+{
+    if(adc_num ==1 ) { 
+      ADC2_GC &= ~ADC_GC_DMAEN;  // enable the interrupt
+    } else {
+      ADC1_GC &= ~ADC_GC_DMAEN;  // enable the interrupt      
+    }
+}
+
 
 
 
@@ -402,7 +467,7 @@ void ADCL::setAdcClockSpeed(ADC_CONVERSION_SPEED speed1)
         \param adc_num ADC number to query
         \return true if yes, false if not.
     */
-    bool ADCL::isConverting(int8_t adc_num)
+bool ADCL::isConverting(int8_t adc_num)
 {
   return ((adc_num? ADC2_HS : ADC1_HS) & ADC_HS_COCO0) == 0;
 }

@@ -13,6 +13,40 @@
 // From module file
 //---------------------------
 // Easier names for the boards
+//----------------------------
+// Define a class for IMXRT_ADC object
+//---------------------------
+#include <stdint.h>
+#include <Arduino.h>
+typedef struct {
+    volatile uint32_t HC0;
+    volatile uint32_t HC1;
+    volatile uint32_t HC2;
+    volatile uint32_t HC3;
+    volatile uint32_t HC4;
+    volatile uint32_t HC5;
+    volatile uint32_t HC6;
+    volatile uint32_t HC7;
+    volatile uint32_t HS; 
+    volatile uint32_t R0; 
+    volatile uint32_t R1; 
+    volatile uint32_t R2; 
+    volatile uint32_t R3; 
+    volatile uint32_t R4; 
+    volatile uint32_t R5; 
+    volatile uint32_t R6; 
+    volatile uint32_t R7; 
+    volatile uint32_t CFG;
+    volatile uint32_t GC; 
+    volatile uint32_t GS; 
+    volatile uint32_t CV; 
+    volatile uint32_t OFS;
+    volatile uint32_t CAL;
+} IMXRT_ADCS_t;
+
+#define IMXRT_ADC1S         (*(IMXRT_ADCS_t *)0x400C4000)
+#define IMXRT_ADC2S         (*(IMXRT_ADCS_t *)0x400C8000)
+
 
 #define ADC_NUM_ADCS (2)
 #define ADC_USE_DMA (1)
@@ -185,6 +219,7 @@ using ADC_Error::ADC_ERROR;
 // debug mode: blink the led light
 #define ADC_debug 0
 
+#include "ADCL_Module_t4.h"
 
 /** Class ADC: Controls the Teensy 3.x ADC
 
@@ -192,17 +227,29 @@ using ADC_Error::ADC_ERROR;
 class ADCL
 {
   protected:
+    friend class ADCL_Module;
+    static const uint8_t t4_pin_to_channel[];
+    static uint8_t mapPinToChannel(uint8_t pin, int8_t adc_num = -1);
+
+
   private:
+
+    ADCL_Module _adc0;
+    ADCL_Module _adc1;
 
 
   public:
 
     /** Default constructor */
-    ADCL() {};
+    ADCL() : _adc0(IMXRT_ADC1S, 0), _adc1(IMXRT_ADC2S, 1), adc0(&_adc0), adc1(&_adc1) {};
+
+    // Modules
 	//analog compare ACMP3 and ACMP4 available on pins 26 and 27
 	static const uint8_t ACMP3 = 26;
 	static const uint8_t ACMP4 = 27;
 	ADC_CONVERSION_SPEED clock_speed;
+    ADCL_Module *adc0;
+    ADCL_Module *adc1;
 
     /////////////// METHODS TO SET/GET SETTINGS OF THE ADC ////////////////////
 
@@ -286,6 +333,33 @@ class ADCL
         \param adc_num ADC number to change.
     */
     void setAveraging(uint8_t num, int8_t adc_num = -1);
+
+
+    //! Enable interrupts
+    /** An IRQ_ADCx Interrupt will be raised when the conversion is completed
+    *  (including hardware averages and if the comparison (if any) is true).
+    *   \param adc_num ADC number to change.
+    */
+    void enableInterrupts(int8_t adc_num = -1);
+
+    //! Disable interrupts
+    /**
+    *   \param adc_num ADC number to change.
+    */
+    void disableInterrupts(int8_t adc_num = -1);
+
+    //! Enable DMA request
+    /** An ADC DMA request will be raised when the conversion is completed
+    *  (including hardware averages and if the comparison (if any) is true).
+    *   \param adc_num ADC number to change.
+    */
+    void enableDMA(int8_t adc_num = -1);
+
+    //! Disable ADC DMA request
+    /**
+    *   \param adc_num ADC number to change.
+    */
+    void disableDMA(int8_t adc_num = -1);
 
 
 
@@ -535,7 +609,6 @@ class ADCL
 
 
 };
-
 
 
 
