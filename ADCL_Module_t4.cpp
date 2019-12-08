@@ -180,7 +180,7 @@ int ADCL_Module::analogRead(uint8_t pin)
     return ADC_ERROR_VALUE;
   }
 
-  _padc.HC0 = ch;
+  _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
   while (!(_padc.HS & ADC_HS_COCO0)) ; // wait
   return _padc.R0;
 }  
@@ -194,7 +194,7 @@ bool ADCL_Module::startSingleRead(uint8_t pin)
     fail_flag |= ADC_ERROR::WRONG_PIN;
     return false;
   }
-  _padc.HC0 = ch;
+  _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
   return true;
 }
 
@@ -211,7 +211,7 @@ bool ADCL_Module::startContinuous(uint8_t pin) {
     _padc.GC |=  ADC_GC_ADCO;  // enable continuous updates.      
     __enable_irq();
 
-    _padc.HC0 = ch;
+    _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
 
     return true;
 }

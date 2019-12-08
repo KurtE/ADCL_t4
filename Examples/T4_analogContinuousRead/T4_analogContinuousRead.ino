@@ -1,9 +1,9 @@
 /* Example for analogContinuousRead
-*  It measures continuously the voltage on pin A9,
-*  Write v and press enter on the serial console to get the value
-*  Write c and press enter on the serial console to check that the conversion is taking place,
-*  Write t to check if the voltage agrees with the comparison in the setup()
-*  Write s to stop the conversion, you can restart it writing r.
+   It measures continuously the voltage on pin A9,
+   Write v and press enter on the serial console to get the value
+   Write c and press enter on the serial console to check that the conversion is taking place,
+   Write t to check if the voltage agrees with the comparison in the setup()
+   Write s to stop the conversion, you can restart it writing r.
 */
 
 #include <ADCL_t4.h>
@@ -16,118 +16,127 @@ ADCL *adc = new ADCL(); // adc object
 
 void setup() {
 
-    pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(readPin, INPUT);
-    pinMode(readPin2, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(readPin, INPUT);
+  pinMode(readPin2, INPUT);
 
+  while (!Serial && millis() < 5000) ;
+  for (int i=0; i< 5; i++) {
+    digitalWriteFast(LED_BUILTIN, HIGH);
+    delay(1);
+    digitalWriteFast(LED_BUILTIN, LOW);
+    delay(1);  
+  }
+  Serial.begin(9600);
+  Serial.println("AnalogContinuousRead");
+  ///// ADC0 ////
+  // reference can be ADC_REFERENCE::REF_3V3, ADC_REFERENCE::REF_1V2 (not for Teensy LC) or ADC_REFERENCE::REF_EXT.
+  //adc->setReference(ADC_REFERENCE::REF_1V2, ADC_0); // change all 3.3 to 1.2 if you change the reference to 1V2
 
-    Serial.begin(9600);
+  adc->setAveraging(16); // set number of averages
+  adc->setResolution(12); // set bits of resolution
 
-    ///// ADC0 ////
-    // reference can be ADC_REFERENCE::REF_3V3, ADC_REFERENCE::REF_1V2 (not for Teensy LC) or ADC_REFERENCE::REF_EXT.
-    //adc->setReference(ADC_REFERENCE::REF_1V2, ADC_0); // change all 3.3 to 1.2 if you change the reference to 1V2
+  // it can be any of the ADC_CONVERSION_SPEED enum: VERY_LOW_SPEED, LOW_SPEED, MED_SPEED, HIGH_SPEED_16BITS, HIGH_SPEED or VERY_HIGH_SPEED
+  // see the documentation for more information
+  // additionally the conversion speed can also be ADACK_2_4, ADACK_4_0, ADACK_5_2 and ADACK_6_2,
+  // where the numbers are the frequency of the ADC clock in MHz and are independent on the bus speed.
+  adc->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
+  // it can be any of the ADC_MED_SPEED enum: VERY_LOW_SPEED, LOW_SPEED, MED_SPEED, HIGH_SPEED or VERY_HIGH_SPEED
+  adc->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 
-    adc->setAveraging(16); // set number of averages
-    adc->setResolution(12); // set bits of resolution
+  // always call the compare functions after changing the resolution!
+  //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_0), 0, ADC_0); // measurement will be ready if value < 1.0V
+  //adc->enableCompareRange(1.0*adc->getMaxValue(ADC_0)/3.3, 2.0*adc->getMaxValue(ADC_0)/3.3, 0, 1, ADC_0); // ready if value lies out of [1.0,2.0] V
 
-    // it can be any of the ADC_CONVERSION_SPEED enum: VERY_LOW_SPEED, LOW_SPEED, MED_SPEED, HIGH_SPEED_16BITS, HIGH_SPEED or VERY_HIGH_SPEED
-    // see the documentation for more information
-    // additionally the conversion speed can also be ADACK_2_4, ADACK_4_0, ADACK_5_2 and ADACK_6_2,
-    // where the numbers are the frequency of the ADC clock in MHz and are independent on the bus speed.
-    adc->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
-    // it can be any of the ADC_MED_SPEED enum: VERY_LOW_SPEED, LOW_SPEED, MED_SPEED, HIGH_SPEED or VERY_HIGH_SPEED
-    adc->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
+  // If you enable interrupts, notice that the isr will read the result, so that isComplete() will return false (most of the time)
+  attachInterruptVector(IRQ_ADC1, adc0_isr);
+  NVIC_ENABLE_IRQ(IRQ_ADC1);
+  adc->enableInterrupts(ADC_0);
 
-    // always call the compare functions after changing the resolution!
-    //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_0), 0, ADC_0); // measurement will be ready if value < 1.0V
-    //adc->enableCompareRange(1.0*adc->getMaxValue(ADC_0)/3.3, 2.0*adc->getMaxValue(ADC_0)/3.3, 0, 1, ADC_0); // ready if value lies out of [1.0,2.0] V
+  adc->startContinuous(readPin, ADC_0);
+  Serial.printf("ADC1: HC0:%x HS:%x CFG:%x GC:%x GS:%x\n", ADC1_HC0, ADC1_HS,  ADC1_CFG, ADC1_GC, ADC1_GS);
 
-    // If you enable interrupts, notice that the isr will read the result, so that isComplete() will return false (most of the time)
-    attachInterruptVector(IRQ_ADC1, adc0_isr);
-    adc->enableInterrupts(ADC_0);
+  adc->setAveraging(16, ADC_1); // set number of averages
+  adc->setResolution(12, ADC_1); // set bits of resolution
+  adc->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED, ADC_1); // change the conversion speed
+  adc->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED, ADC_1); // change the sampling speed
+  // always call the compare functions after changing the resolution!
+  //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_1), 0, ADC_1); // measurement will be ready if value < 1.0V
+  //adc->enableCompareRange(1.0*adc->getMaxValue(ADC_1)/3.3, 2.0*adc->getMaxValue(ADC_1)/3.3, 0, 1, ADC_1); // ready if value lies out of [1.0,2.0] V
+  //adc->enableInterrupts(ADC_1);
 
-    adc->startContinuous(readPin, ADC_0);
-    adc->setAveraging(16, ADC_1); // set number of averages
-    adc->setResolution(12, ADC_1); // set bits of resolution
-    adc->setConversionSpeed(ADC_CONVERSION_SPEED::MED_SPEED, ADC_1); // change the conversion speed
-    adc->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED, ADC_1); // change the sampling speed
-    // always call the compare functions after changing the resolution!
-    //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_1), 0, ADC_1); // measurement will be ready if value < 1.0V
-    //adc->enableCompareRange(1.0*adc->getMaxValue(ADC_1)/3.3, 2.0*adc->getMaxValue(ADC_1)/3.3, 0, 1, ADC_1); // ready if value lies out of [1.0,2.0] V
-    //adc->enableInterrupts(ADC_1);
-
-    adc->startContinuous(readPin2, ADC_1);
-    delay(500);
+  adc->startContinuous(readPin2, ADC_1);
+  delay(500);
 }
 
 int value = 0;
 int value2 = 0;
-char c=0;
+char c = 0;
 
 void loop() {
 
-    if (Serial.available()) {
-        c = Serial.read();
-        if(c=='c') { // conversion active?
-            Serial.print("Converting? ADC0: ");
-            Serial.println(adc->isConverting(ADC_0));
-            #if ADC_NUM_ADCS>1
-            Serial.print("Converting? ADC1: ");
-            Serial.println(adc->isConverting(ADC_1));
-            #endif
-        } else if(c=='s') { // stop conversion
-            adc->stopContinuous(ADC_0);
-            Serial.println("Stopped");
-        } else if(c=='t') { // conversion successful?
-            Serial.print("Conversion successful? ADC0: ");
-            Serial.println(adc->isComplete(ADC_0));
-            #if ADC_NUM_ADCS>1
-            Serial.print("Conversion successful? ADC1: ");
-            Serial.println(adc->isComplete(ADC_1));
-            #endif
-        } else if(c=='r') { // restart conversion
-            Serial.println("Restarting conversions ");
-            adc->startContinuous(readPin, ADC_0);
-            //adc->startContinuousDifferential(A10, A11, ADC_0);
-        } else if(c=='v') { // value
-            Serial.print("Value ADC0: ");
-            value = (uint16_t)adc->analogReadContinuous(ADC_0); // the unsigned is necessary for 16 bits, otherwise values larger than 3.3/2 V are negative!
-            Serial.print(value, DEC);
-            Serial.print(" ");
-            Serial.println(value*3.3/adc->getMaxValue(ADC_0), DEC);
-            #if ADC_NUM_ADCS>1
-            Serial.print("Value ADC1: ");
-            value2 = (uint16_t)adc->analogReadContinuous(ADC_1); // the unsigned is necessary for 16 bits, otherwise values larger than 3.3/2 V are negative!
-            Serial.print(value2, DEC);
-            Serial.print(" ");
-            Serial.println(value2*3.3/adc->getMaxValue(ADC_1), DEC);
-            #endif
-        } else if(c=='n') { // new single conversion on readPin3
-            // this shows how even when both ADCs are busy with continuous measurements
-            // you can still call analogRead, it will pause the conversion, get the value and resume the continuous conversion automatically.
-            Serial.print("Single read on readPin3: ");
-            Serial.println(adc->analogRead(readPin3)*3.3/adc->getMaxValue(ADC_0), DEC);
-        }
+  if (Serial.available()) {
+    c = Serial.read();
+    if (c == 'c') { // conversion active?
+      Serial.print("Converting? ADC0: ");
+      Serial.println(adc->isConverting(ADC_0));
+#if ADC_NUM_ADCS>1
+      Serial.print("Converting? ADC1: ");
+      Serial.println(adc->isConverting(ADC_1));
+#endif
+    } else if (c == 's') { // stop conversion
+      adc->stopContinuous(ADC_0);
+      Serial.println("Stopped");
+    } else if (c == 't') { // conversion successful?
+      Serial.print("Conversion successful? ADC0: ");
+      Serial.println(adc->isComplete(ADC_0));
+#if ADC_NUM_ADCS>1
+      Serial.print("Conversion successful? ADC1: ");
+      Serial.println(adc->isComplete(ADC_1));
+#endif
+    } else if (c == 'r') { // restart conversion
+      Serial.println("Restarting conversions ");
+      adc->startContinuous(readPin, ADC_0);
+      //adc->startContinuousDifferential(A10, A11, ADC_0);
+    } else if (c == 'v') { // value
+      Serial.print("Value ADC0: ");
+      value = (uint16_t)adc->analogReadContinuous(ADC_0); // the unsigned is necessary for 16 bits, otherwise values larger than 3.3/2 V are negative!
+      Serial.print(value, DEC);
+      Serial.print(" ");
+      Serial.println(value * 3.3 / adc->getMaxValue(ADC_0), DEC);
+#if ADC_NUM_ADCS>1
+      Serial.print("Value ADC1: ");
+      value2 = (uint16_t)adc->analogReadContinuous(ADC_1); // the unsigned is necessary for 16 bits, otherwise values larger than 3.3/2 V are negative!
+      Serial.print(value2, DEC);
+      Serial.print(" ");
+      Serial.println(value2 * 3.3 / adc->getMaxValue(ADC_1), DEC);
+#endif
+    } else if (c == 'n') { // new single conversion on readPin3
+      // this shows how even when both ADCs are busy with continuous measurements
+      // you can still call analogRead, it will pause the conversion, get the value and resume the continuous conversion automatically.
+      Serial.print("Single read on readPin3: ");
+      Serial.println(adc->analogRead(readPin3) * 3.3 / adc->getMaxValue(ADC_0), DEC);
     }
+  }
 
-    // Print errors, if any.
-    adc->printError();
+  // Print errors, if any.
+  adc->printError();
 
-    //digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
+  //digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
 
-    delay(100);
+  delay(100);
 
 }
 
 void adc0_isr(void) {
-    int val = adc->analogReadContinuous(ADC_0);
-    Serial.print(val, DEC);
-    digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN)); // Toggle the led
+  int val = adc->analogReadContinuous(ADC_0);
+  Serial.println(val, DEC);
+  digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN)); // Toggle the led
 }
 #if ADC_NUM_ADCS>1
 void adc1_isr(void) {
-    adc->analogReadContinuous(ADC_1);
-    digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
+  adc->analogReadContinuous(ADC_1);
+  digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
 
 }
 #endif
