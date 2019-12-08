@@ -237,6 +237,40 @@ class ADCL
     */
     int readSingle(int8_t adc_num = -1);
 
+        ///////////// CONTINUOUS CONVERSION METHODS ////////////
+
+        //! Starts continuous conversion on the pin.
+        /** It returns as soon as the ADC is set, use analogReadContinuous() to read the value.
+        *   \param pin can be any of the analog pins
+        *   \param adc_num ADC_X ADC module
+        *   \return true if the pin is valid, false otherwise.
+        */
+        bool startContinuous(uint8_t pin, int8_t adc_num = -1);
+
+        //! Starts continuous conversion between the pins (pinP-pinN).
+        /** It returns as soon as the ADC is set, use analogReadContinuous() to read the value.
+        *   \param pinP must be A10 or A12.
+        *   \param pinN must be A11 (if pinP=A10) or A13 (if pinP=A12).
+        *   \param adc_num ADC_X ADC module
+        *   \return true if the pins are valid, false otherwise.
+        */
+        bool startContinuousDifferential(uint8_t pinP, uint8_t pinN, int8_t adc_num = -1);
+
+        //! Reads the analog value of a continuous conversion.
+        /** Set the continuous conversion with with analogStartContinuous(pin) or startContinuousDifferential(pinP, pinN).
+        *   If single-ended and 16 bits it's necessary to typecast it to an unsigned type (like uint16_t),
+        *   otherwise values larger than 3.3/2 V are interpreted as negative!
+        *   \param adc_num ADC_X ADC module
+        *   \return the last converted value.
+        */
+        int analogReadContinuous(int8_t adc_num = -1);
+
+        //! Stops continuous conversion
+        /**
+        *   \param adc_num ADC_X ADC module
+        */
+        void stopContinuous(int8_t adc_num = -1);
+
 
 
     /////////// SYNCHRONIZED METHODS ///////////////

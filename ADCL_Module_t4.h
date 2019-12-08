@@ -263,7 +263,19 @@ class ADCL_Module
     bool isComplete();
     int analogRead(uint8_t pin);
     bool startSingleRead(uint8_t pin);
-    int readSingle();
+    int readSingle()  __attribute__((always_inline)) {
+      return (int16_t)(int32_t)_padc.R0;
+    }
+
+    bool startContinuous(uint8_t pin);
+    bool startContinuousDifferential(uint8_t pinP, uint8_t pinN);
+    int analogReadContinuous() __attribute__((always_inline)) {
+        return (int16_t)(int32_t)_padc.R0;
+    }
+
+    //! Stops continuous conversion
+    void stopContinuous();
+
 };
 
 #endif

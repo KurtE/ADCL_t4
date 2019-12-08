@@ -27,12 +27,14 @@ void ADCL_Module::setResolution(uint8_t bits)
     mode = ADC_CFG_MODE(2) | ADC_CFG_ADSTS(3) | ADC_CFG_ADLSMP;
   }
 
-    tmp32  = (_padc.CFG & (0xFFFFFC00));
-    tmp32 |= (_padc.CFG & (0x03));  // ADICLK
-    tmp32 |= (_padc.CFG & (0xE0));  // ADIV & ADLPC
+  __disable_irq();
+  tmp32  = (_padc.CFG & (0xFFFFFC00));
+  tmp32 |= (_padc.CFG & (0x03));  // ADICLK
+  tmp32 |= (_padc.CFG & (0xE0));  // ADIV & ADLPC
 
-    tmp32 |= mode;
-    _padc.CFG = tmp32;
+  tmp32 |= mode;
+  _padc.CFG = tmp32;
+  __enable_irq();
 }
 
 
@@ -72,7 +74,9 @@ void ADCL_Module::setConversionSpeed(ADC_CONVERSION_SPEED speed)
       break;
 
   }
+  __disable_irq();
   _padc.CFG = (_padc.CFG & ~(ADC_CFG_ADSTS(3))) | adc_cfg_adsts;    
+  __enable_irq();
 }
 
 
@@ -92,7 +96,9 @@ void ADCL_Module::setSamplingSpeed(ADC_SAMPLING_SPEED speed)
       adc_cfg_adlsmp = ADC_CFG_ADHSC;
       break;
   }
+  __disable_irq();
   _padc.CFG = (_padc.CFG & ~(ADC_CFG_ADLSMP | ADC_CFG_ADHSC)) | adc_cfg_adlsmp;    
+  __enable_irq();
 }
 
 
@@ -100,6 +106,7 @@ void ADCL_Module::setAveraging(uint8_t num)
 {
   uint32_t mode;
 
+    __disable_irq();
     _padc.GC &= ~0x20;
     mode = _padc.CFG & ~0xC000;
     if (num >= 32) {
@@ -117,30 +124,39 @@ void ADCL_Module::setAveraging(uint8_t num)
     if (num >= 4) {
       _padc.GC |= ADC_GC_AVGE;// turns on averaging
     }
+    __enable_irq();
 }
 
 
 void ADCL_Module::enableInterrupts()
 {
-      _padc.HC0 |= ADC_HC_AIEN;  // enable the interrupt      
+    __disable_irq();
+    _padc.HC0 |= ADC_HC_AIEN;  // enable the interrupt      
+    __enable_irq();
 }
 
 
 void ADCL_Module::disableInterrupts()
 {
-      _padc.HC0 &= ~ADC_HC_AIEN;  // Disage the interrupt
+    __disable_irq();
+    _padc.HC0 &= ~ADC_HC_AIEN;  // Disage the interrupt
+    __enable_irq();
 }
 
 
 void ADCL_Module::enableDMA()
 {
-      _padc.GC |= (ADC_GC_DMAEN | ADC_GC_ADCO);  // enable DMA      
+    __disable_irq();
+    _padc.GC |= (ADC_GC_DMAEN | ADC_GC_ADCO);  // enable DMA      
+    __enable_irq();
 }
 
 
 void ADCL_Module::disableDMA()
 {
-      _padc.GC &= ~(ADC_GC_DMAEN | ADC_GC_ADCO);  // Disable DMA      
+    __disable_irq();
+    _padc.GC &= ~(ADC_GC_DMAEN | ADC_GC_ADCO);  // Disable DMA      
+    __enable_irq();
 }
 
 
@@ -159,7 +175,10 @@ bool ADCL_Module::isComplete()
 int ADCL_Module::analogRead(uint8_t pin)
 {
   uint8_t ch = ADCL::mapPinToChannel(pin, _adc_num);
-  if (ch == 0xff) return ADC_ERROR_VALUE;
+  if (ch == 0xff) {
+    fail_flag |= ADC_ERROR::WRONG_PIN;
+    return ADC_ERROR_VALUE;
+  }
 
   _padc.HC0 = ch;
   while (!(_padc.HS & ADC_HS_COCO0)) ; // wait
@@ -171,16 +190,55 @@ int ADCL_Module::analogRead(uint8_t pin)
 bool ADCL_Module::startSingleRead(uint8_t pin)
 {
   uint8_t ch = ADCL::mapPinToChannel(pin, _adc_num);
-  if (ch == 0xff) return false;
-
+  if (ch == 0xff) {
+    fail_flag |= ADC_ERROR::WRONG_PIN;
+    return false;
+  }
   _padc.HC0 = ch;
   return true;
 }
 
+bool ADCL_Module::startContinuous(uint8_t pin) {
 
-int ADCL_Module::readSingle()
-{
-  return _padc.R0;
+    uint8_t ch = ADCL::mapPinToChannel(pin, _adc_num);
+    if (ch == 0xff) {
+      fail_flag |= ADC_ERROR::WRONG_PIN;
+      return false;
+    }
+
+    // set continuous conversion flag
+    __disable_irq();
+    _padc.GC |=  ADC_GC_ADCO;  // enable continuous updates.      
+    __enable_irq();
+
+    _padc.HC0 = ch;
+
+    return true;
 }
+
+
+/* Starts continuous and differential conversion between the pins (pinP-pinN)
+ * It returns as soon as the ADC is set, use analogReadContinuous() to read the value
+ * Set the resolution, number of averages and voltage reference using the appropriate functions BEFORE calling this function
+*/
+bool ADCL_Module::startContinuousDifferential(uint8_t pinP, uint8_t pinN) {
+
+      fail_flag |= ADC_ERROR::OTHER;
+      return false;   // all others are invalid
+}
+
+
+/* Stops continuous conversion
+*/
+void ADCL_Module::stopContinuous() {
+
+    __disable_irq();
+    _padc.GC &=  ~ADC_GC_ADCO;  // enable continuous updates.      
+    __enable_irq();
+
+    return;
+}
+
+
 
 

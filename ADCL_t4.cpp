@@ -80,10 +80,10 @@ uint8_t ADCL::mapPinToChannel(uint8_t pin, int8_t adc_num)
   */
 void ADCL::setResolution(uint8_t bits, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    adc0->setResolution(bits);
-  else 
+  if (adc_num == 1) 
     adc1->setResolution(bits);
+  else 
+    adc0->setResolution(bits);
 }
 
 
@@ -95,10 +95,10 @@ void ADCL::setResolution(uint8_t bits, int8_t adc_num)
   */
 uint8_t ADCL::getResolution(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->getResolution();
-  else 
+  if (adc_num == 1) 
     return adc1->getResolution();
+  else 
+    return adc0->getResolution();
 }
 
 
@@ -110,10 +110,10 @@ uint8_t ADCL::getResolution(int8_t adc_num)
   */
   uint32_t ADCL::getMaxValue(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->getMaxValue();
-  else 
+  if (adc_num == 1) 
     return adc1->getMaxValue();
+  else 
+    return adc0->getMaxValue();
 }
 
 
@@ -140,10 +140,10 @@ uint8_t ADCL::getResolution(int8_t adc_num)
   */
 void ADCL::setConversionSpeed(ADC_CONVERSION_SPEED speed, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    adc0->setConversionSpeed(speed);
-  else 
+  if (adc_num == 1) 
     adc1->setConversionSpeed(speed);
+  else 
+    adc0->setConversionSpeed(speed);
 }
 
 void ADCL::setAdcClockSpeed(ADC_CONVERSION_SPEED speed1)
@@ -284,10 +284,10 @@ void ADCL::setAdcClockSpeed(ADC_CONVERSION_SPEED speed1)
   */
 void ADCL::setSamplingSpeed(ADC_SAMPLING_SPEED speed, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    adc0->setSamplingSpeed(speed);
-  else 
+  if (adc_num == 1) 
     adc1->setSamplingSpeed(speed);
+  else 
+    adc0->setSamplingSpeed(speed);
 }
 
 
@@ -301,10 +301,10 @@ void ADCL::setSamplingSpeed(ADC_SAMPLING_SPEED speed, int8_t adc_num)
   */
 void ADCL::setAveraging(uint8_t num, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    adc0->setAveraging(num);
-  else 
+  if (adc_num == 1) 
     adc1->setAveraging(num);
+  else 
+    adc0->setAveraging(num);
 }
 
 // Enable interrupts
@@ -313,19 +313,19 @@ void ADCL::setAveraging(uint8_t num, int8_t adc_num)
 */
 void ADCL::enableInterrupts(int8_t adc_num) 
 {
-  if (adc_num == 0) 
-    adc0->enableInterrupts();
-  else 
+  if (adc_num == 1) 
     adc1->enableInterrupts();
+  else 
+    adc0->enableInterrupts();
 }
 
 // Disable interrupts
 void ADCL::disableInterrupts(int8_t adc_num) 
 {
-  if (adc_num == 0) 
-    adc0->disableInterrupts();
-  else 
+  if (adc_num == 1) 
     adc1->disableInterrupts();
+  else 
+    adc0->disableInterrupts();
 }
 
 
@@ -337,10 +337,10 @@ void ADCL::disableInterrupts(int8_t adc_num)
 */
 void ADCL::enableDMA(int8_t adc_num) 
 {
-  if (adc_num == 0) 
+  if (adc_num == 1) 
     adc0->enableDMA();
   else 
-    adc1->enableDMA();
+    adc0->enableDMA();
 }
 
 //! Disable ADC DMA request
@@ -349,10 +349,10 @@ void ADCL::enableDMA(int8_t adc_num)
 */
 void ADCL::disableDMA(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    adc0->disableDMA();
-  else 
+  if (adc_num == 1) 
     adc1->disableDMA();
+  else 
+    adc0->disableDMA();
 }
 
 
@@ -368,10 +368,10 @@ void ADCL::disableDMA(int8_t adc_num)
     */
 bool ADCL::isConverting(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->isConverting();
-  else 
+  if (adc_num == 1) 
     return adc1->isConverting();
+  else 
+    return adc0->isConverting();
 }
 
 
@@ -384,10 +384,10 @@ bool ADCL::isConverting(int8_t adc_num)
     */
 bool ADCL::isComplete(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->isComplete();
-  else 
+  if (adc_num == 1) 
     return adc1->isComplete();
+  else 
+    return adc0->isComplete();
 }
 
 
@@ -406,10 +406,21 @@ bool ADCL::isComplete(int8_t adc_num)
     */
 int ADCL::analogRead(uint8_t pin, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->analogRead(pin);
-  else 
+  if (adc_num == -1) {
+    uint8_t ch = mapPinToChannel(pin, adc_num);
+    if (ch == 0xff) {
+        adc0->fail_flag |= ADC_ERROR::WRONG_PIN;
+        adc1->fail_flag |= ADC_ERROR::WRONG_PIN;
+        return ADC_ERROR_VALUE;      
+    }
+    adc_num = (ch & 0x80)? 1 : 0; // assume adc0 unless it is not supportd on adc0 
+
+  }
+
+  if (adc_num == 1) 
     return adc1->analogRead(pin);
+  else 
+    return adc0->analogRead(pin);
 }
 
 
@@ -438,10 +449,19 @@ int ADCL::analogRead(uint8_t pin, int8_t adc_num)
     */
 bool ADCL::startSingleRead(uint8_t pin, int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->startSingleRead(pin);
-  else 
+  if (adc_num == -1) {
+    uint8_t ch = mapPinToChannel(pin, adc_num);
+    if (ch == 0xff) {
+        adc0->fail_flag |= ADC_ERROR::WRONG_PIN;
+        adc1->fail_flag |= ADC_ERROR::WRONG_PIN;
+        return ADC_ERROR_VALUE;      
+    }
+    adc_num = (ch & 0x80)? 1 : 0; // assume adc0 unless it is not supportd on adc0 
+  }
+  if (adc_num == 1) 
     return adc1->startSingleRead(pin);
+  else 
+    return adc0->startSingleRead(pin);
 }
 
 
@@ -455,10 +475,65 @@ bool ADCL::startSingleRead(uint8_t pin, int8_t adc_num)
     */
 int ADCL::readSingle(int8_t adc_num)
 {
-  if (adc_num == 0) 
-    return adc0->readSingle();
-  else 
+  if (adc_num == 1) 
     return adc1->readSingle();
+  else 
+    return adc0->readSingle();
+}
+
+// Starts continuous conversion on the pin.
+/* It returns as soon as the ADC is set, use analogReadContinuous() to read the value.
+*/
+bool ADCL::startContinuous(uint8_t pin, int8_t adc_num) 
+{
+  if (adc_num == -1) {
+    uint8_t ch = mapPinToChannel(pin, adc_num);
+    if (ch == 0xff) {
+        adc0->fail_flag |= ADC_ERROR::WRONG_PIN;
+        adc1->fail_flag |= ADC_ERROR::WRONG_PIN;
+        return false;      
+    }
+    adc_num = (ch & 0x80)? 1 : 0; // assume adc0 unless it is not supportd on adc0 
+  }
+  if (adc_num == 1) 
+    return adc1->startContinuous(pin);
+  else 
+    return adc0->startContinuous(pin);
+}
+
+// Starts continuous conversion between the pins (pinP-pinN).
+/* It returns as soon as the ADC is set, use analogReadContinuous() to read the value.
+* \param pinP must be A10 or A12.
+* \param pinN must be A11 (if pinP=A10) or A13 (if pinP=A12).
+* Other pins will return ADC_ERROR_DIFF_VALUE.
+*/
+bool ADCL::startContinuousDifferential(uint8_t pinP, uint8_t pinN, int8_t adc_num) {
+  adc0->fail_flag |= ADC_ERROR::OTHER;
+  adc1->fail_flag |= ADC_ERROR::OTHER;
+  return false;   // all others are invalid
+}
+
+//! Reads the analog value of a continuous conversion.
+/** Set the continuous conversion with with analogStartContinuous(pin) or startContinuousDifferential(pinP, pinN).
+*   \return the last converted value.
+*   If single-ended and 16 bits it's necessary to typecast it to an unsigned type (like uint16_t),
+*   otherwise values larger than 3.3/2 V are interpreted as negative!
+*/
+int ADCL::analogReadContinuous(int8_t adc_num) {
+    if(adc_num==1){ // user wants ADC 1, do nothing if it's a Teensy 3.0
+      return adc1->analogReadContinuous();
+    }
+    return adc0->analogReadContinuous();
+}
+
+//! Stops continuous conversion
+void ADCL::stopContinuous(int8_t adc_num) {
+    if(adc_num==1){ 
+        adc1->stopContinuous();
+        return;
+    }
+    adc0->stopContinuous();
+    return;
 }
 
 
