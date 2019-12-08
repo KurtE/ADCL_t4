@@ -644,9 +644,10 @@ Sync_result ADCL::readSynchronizedSingle()
 //! enable the compare function
 int ADCL::enableCompare(uint8_t acmp_pin, uint8_t input_pin)
 {	
-	uint8_t INx = 255;
+	uint8_t INx;
 	
 	if(acmp_pin == ACMP3){
+		INx = 255;
 		for(uint8_t i = 0; i < sizeof(acmp3_inp_pins); i++){
 			if(input_pin == acmp3_inp_pins[i]){
 				INx = i;
@@ -661,21 +662,24 @@ int ADCL::enableCompare(uint8_t acmp_pin, uint8_t input_pin)
 		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
 		pinMode(ACMP3, OUTPUT);
 		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_14 = 1;  // ALT 1 ACMP3_OUT
+		return 0;
 	} else if(acmp_pin == ACMP4){
+		INx = 255;
 		for(uint8_t i = 0; i < sizeof(acmp4_inp_pins); i++){
 			if(input_pin == acmp4_inp_pins[i]){
 				INx = i;
 			}
 		}
 		if (INx == 255)  return ADC_ERROR_VALUE;
-		
+		//Serial.printf("ACMP4: %d, acmp_pin: %d, INx: %d\n", ACMP4,acmp_pin, INx);
 		CCM_CCGR3 |= CCM_CCGR3_ACMP4(CCM_CCGR_ON);  // ACMP on
 		CMP4_MUXCR = CMP_MUXCR_PSEL(INx) | CMP_MUXCR_MSEL(7);
 		CMP4_CR1 = CMP_CR1_ENABLE ;   // enable
 		CMP4_DACCR = DACCR_ENABLE  | 32 | 0x40;  // 3v3/2 and enable
 		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
-		pinMode(ACMP4, OUTPUT);
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_15 = 1;  // ALT 1 ACMP3_OUT 
+		pinMode(acmp_pin, OUTPUT);
+		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_15 = 1;  // ALT 1 4
+  		return 0;
 	} else {
 		return ADC_ERROR_VALUE;
 	}
@@ -690,7 +694,7 @@ void ADCL::disableCompare(uint8_t acmp_pin)
 		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_OFF);  // ACMP on
 		CMP3_CR1 = CMP_CR1_DISABLE ;
 	} else if(acmp_pin == ACMP4){
-		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_OFF);  // ACMP on
+		CCM_CCGR3 |= CCM_CCGR3_ACMP4(CCM_CCGR_OFF);  // ACMP on
 		CMP4_CR1 = CMP_CR1_DISABLE ;
 	}
 }
@@ -833,6 +837,29 @@ int ADCL::getAdcCompareRes(uint8_t acmp_pin)
 		return CMP4_SCR & CMP_SCR_COUT;
 	}
 	return -1;
+}
+
+/*!
+ * brief Set user defined offset.
+ *
+ * param base   ADC number.
+ * param signedVal  false for Adding, true for subtracting offset from raw value.
+ */
+void ADCL::setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue)
+{
+
+    uint32_t tmp32;
+
+    tmp32 = ADC_OFS_OFS(offsetValue);
+    if (signedVal)
+    {
+        tmp32 |= ADC_OFS_SIGN_MASK;
+    }
+	if(adc_num == 0) {
+		ADC1_OFS = tmp32;
+	} else if(adc_num == 1) {
+		ADC2_OFS = tmp32;
+	}
 }
 
 #endif

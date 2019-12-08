@@ -528,8 +528,14 @@ class ADCL
 	
     //! enable the compare function
     int enableCompare(uint8_t acmp_pin, uint8_t input_pin);
-
 	
+	/*!
+	* brief Set user defined offset.
+	*
+	* param base   ADC number.
+	* param signedVal  false for Adding, true for subtracting offset from raw value.
+	*/
+	void setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue);
 
 #endif
 
