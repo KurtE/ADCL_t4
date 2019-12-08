@@ -162,7 +162,7 @@ void ADCL_Module::disableDMA()
 
 bool ADCL_Module::isConverting()
 {
-  return (_padc.HS & ADC_HS_COCO0) == 0;
+  return (_padc.GS & ADC_GS_ADACT) != 0;
 }
 
 

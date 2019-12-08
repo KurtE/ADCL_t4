@@ -431,6 +431,19 @@ class ADCL
 
 #endif
 
+    //////////// ERROR PRINTING /////
+    //! Prints the human-readable error from all ADC, if any.
+    void printError() {
+        adc0->printError();
+        adc1->printError();
+    }
+
+    //! Resets all errors from all ADCs, if any.
+    void resetError() {
+        adc0->resetError();
+        adc1->resetError();
+    }
+
 
 };
 
