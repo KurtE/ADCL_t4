@@ -853,7 +853,7 @@ void ADCL::setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue)
     tmp32 = ADC_OFS_OFS(offsetValue);
     if (signedVal)
     {
-        tmp32 |= ADC_OFS_SIGN_MASK;
+        tmp32 |= 0x1000U;
     }
 	if(adc_num == 0) {
 		ADC1_OFS = tmp32;
