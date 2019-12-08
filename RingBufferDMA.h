@@ -95,9 +95,6 @@ class RingBufferDMA
         //! Increases the pointer modulo 2*size-1
         uint16_t increase(uint16_t p);
 
-        volatile uint32_t* const ADC_RA;
-
-
 
 
 };

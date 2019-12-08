@@ -437,9 +437,9 @@ void ADCL::disableInterrupts(int8_t adc_num)
 void ADCL::enableDMA(int8_t adc_num) 
 {
     if(adc_num ==1 ) { 
-      ADC2_GC |= ADC_GC_DMAEN;  // enable the interrupt
+      ADC2_GC |= (ADC_GC_DMAEN | ADC_GC_ADCO);  // enable the DMA and Continuous
     } else {
-      ADC1_GC |= ADC_GC_DMAEN;  // enable the interrupt      
+      ADC1_GC |= (ADC_GC_DMAEN | ADC_GC_ADCO);  
     }
 }
 
@@ -450,9 +450,9 @@ void ADCL::enableDMA(int8_t adc_num)
 void ADCL::disableDMA(int8_t adc_num)
 {
     if(adc_num ==1 ) { 
-      ADC2_GC &= ~ADC_GC_DMAEN;  // enable the interrupt
+      ADC2_GC &= ~(ADC_GC_DMAEN | ADC_GC_ADCO);  // Disable DMA and continuous
     } else {
-      ADC1_GC &= ~ADC_GC_DMAEN;  // enable the interrupt      
+      ADC1_GC &= ~(ADC_GC_DMAEN | ADC_GC_ADCO);  //       
     }
 }
 

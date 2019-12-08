@@ -30,7 +30,6 @@ RingBufferDMA::RingBufferDMA(volatile int16_t* elems, uint32_t len, uint8_t ADC_
         p_elems(elems)
         , b_size(len)
         , ADC_number(ADC_num)
-        , ADC_RA(&ADC1_R0 + (uint32_t)0x20000*ADC_number)
         {
 
     b_start = 0;
@@ -43,16 +42,26 @@ RingBufferDMA::RingBufferDMA(volatile int16_t* elems, uint32_t len, uint8_t ADC_
     //digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
 }
 
+void dumpDMA_TCD(DMABaseClass *dmabc)
+{
+    Serial.printf("%x %x:", (uint32_t)dmabc, (uint32_t)dmabc->TCD);
+
+    Serial.printf("SA:%x SO:%d AT:%x NB:%x SL:%d DA:%x DO: %d CI:%x DL:%x CS:%x BI:%x\n", (uint32_t)dmabc->TCD->SADDR,
+        dmabc->TCD->SOFF, dmabc->TCD->ATTR, dmabc->TCD->NBYTES, dmabc->TCD->SLAST, (uint32_t)dmabc->TCD->DADDR, 
+        dmabc->TCD->DOFF, dmabc->TCD->CITER, dmabc->TCD->DLASTSGA, dmabc->TCD->CSR, dmabc->TCD->BITER);
+}
+
+
 void RingBufferDMA::start(void (*call_dma_isr)(void)) {
 
     // set up a DMA channel to store the ADC data
-    // The idea is to have ADC_RA as a source,
     // the buffer as a circular buffer
     // each ADC conversion triggers a DMA transfer (transferCount(b_size)), of size 2 bytes (transferSize(2))
 
-    dmaChannel->source(*ADC_RA);
+    dmaChannel->source(ADC_number? ADC2_R0 : ADC1_R0);
 
     dmaChannel->destinationCircular((uint16_t*)p_elems, 2*b_size); // 2*b_size is necessary for some reason
+    arm_dcache_delete(p_elems, 2*b_size);
 
     dmaChannel->transferSize(2); // both SRC and DST size
 
@@ -61,18 +70,14 @@ void RingBufferDMA::start(void (*call_dma_isr)(void)) {
     dmaChannel->interruptAtCompletion(); //interruptAtHalf or interruptAtCompletion
 
 
-	uint8_t DMAMUX_SOURCE_ADC = DMAMUX_SOURCE_ADC1;
-	#if ADC_NUM_ADCS>=2
-    if(ADC_number==1){
-        DMAMUX_SOURCE_ADC = DMAMUX_SOURCE_ADC2;
-    }
-    #endif // ADC_NUM_ADCS
-
-
-	dmaChannel->triggerAtHardwareEvent(DMAMUX_SOURCE_ADC); // start DMA channel when ADC finishes a conversion
+    dmaChannel->attachInterrupt(call_dma_isr);
+	dmaChannel->triggerAtHardwareEvent(ADC_number? DMAMUX_SOURCE_ADC2 : DMAMUX_SOURCE_ADC1); // start DMA channel when ADC finishes a conversion
+    arm_dcache_flush(dmaChannel, sizeof(dmaChannel));
 	dmaChannel->enable();
 
-	dmaChannel->attachInterrupt(call_dma_isr);
+
+    dumpDMA_TCD(dmaChannel);
+    Serial.printf("ADC1: HC0:%x HS:%x CFG:%x GC:%x GS:%x\n", ADC1_HC0, ADC1_HS,  ADC1_CFG, ADC1_GC, ADC1_GS);
 
     //digitalWriteFast(LED_BUILTIN, !digitalReadFast(LED_BUILTIN));
 }

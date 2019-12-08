@@ -128,19 +128,19 @@ void ADCL_Module::enableInterrupts()
 
 void ADCL_Module::disableInterrupts()
 {
-      _padc.HC0 &= ~ADC_HC_AIEN;  // enable the interrupt
+      _padc.HC0 &= ~ADC_HC_AIEN;  // Disage the interrupt
 }
 
 
 void ADCL_Module::enableDMA()
 {
-      _padc.GC |= ADC_GC_DMAEN;  // enable the interrupt      
+      _padc.GC |= (ADC_GC_DMAEN | ADC_GC_ADCO);  // enable DMA      
 }
 
 
 void ADCL_Module::disableDMA()
 {
-      _padc.GC &= ~ADC_GC_DMAEN;  // enable the interrupt      
+      _padc.GC &= ~(ADC_GC_DMAEN | ADC_GC_ADCO);  // Disable DMA      
 }
 
 
