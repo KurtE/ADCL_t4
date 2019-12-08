@@ -61,7 +61,7 @@ void RingBufferDMA::start(void (*call_dma_isr)(void)) {
     dmaChannel->source(ADC_number? ADC2_R0 : ADC1_R0);
 
     dmaChannel->destinationCircular((uint16_t*)p_elems, 2*b_size); // 2*b_size is necessary for some reason
-    arm_dcache_delete(p_elems, 2*b_size);
+    arm_dcache_delete((void*)p_elems, 2*b_size);
 
     dmaChannel->transferSize(2); // both SRC and DST size
 
@@ -72,7 +72,7 @@ void RingBufferDMA::start(void (*call_dma_isr)(void)) {
 
     dmaChannel->attachInterrupt(call_dma_isr);
 	dmaChannel->triggerAtHardwareEvent(ADC_number? DMAMUX_SOURCE_ADC2 : DMAMUX_SOURCE_ADC1); // start DMA channel when ADC finishes a conversion
-    arm_dcache_flush(dmaChannel, sizeof(dmaChannel));
+    arm_dcache_flush((void*)dmaChannel, sizeof(dmaChannel));
 	dmaChannel->enable();
 
 
