@@ -128,6 +128,14 @@ void ADCL_Module::setAveraging(uint8_t num)
 }
 
 
+void ADCL_Module::attachInterrupt(void (*adc_isr)(void)) 
+{
+  // Probably should add this as part of constructor for module object... 
+  IRQ_NUMBER_t irq = (&_padc.HC0 == &IMXRT_ADC1S.HC0)? IRQ_ADC1 : IRQ_ADC2;
+  attachInterruptVector(irq, adc_isr);
+  NVIC_ENABLE_IRQ(irq);
+}
+
 void ADCL_Module::enableInterrupts()
 {
     __disable_irq();

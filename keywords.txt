@@ -41,6 +41,7 @@ getMaxValue								KEYWORD2
 setConversionSpeed						KEYWORD2
 setSamplingSpeed						KEYWORD2
 setAveraging							KEYWORD2
+attachInterrupt						KEYWORD2
 enableInterrupts						KEYWORD2
 disableInterrupts						KEYWORD2
 enableDMA								KEYWORD2

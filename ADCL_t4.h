@@ -119,6 +119,11 @@ class ADCL
     void setAveraging(uint8_t num, int8_t adc_num = -1);
 
 
+    //! attach Interrupt handler
+    /** function to call when conversion complete ISR is triggered
+    */
+    void attachInterrupt(void (*adc_isr)(void), int8_t adc_num = -1);
+    
     //! Enable interrupts
     /** An IRQ_ADCx Interrupt will be raised when the conversion is completed
     *  (including hardware averages and if the comparison (if any) is true).

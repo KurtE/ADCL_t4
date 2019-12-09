@@ -255,6 +255,7 @@ class ADCL_Module
     void setConversionSpeed(ADC_CONVERSION_SPEED speed);
     void setSamplingSpeed(ADC_SAMPLING_SPEED speed);
     void setAveraging(uint8_t num);
+    void attachInterrupt(void (*adc_isr)(void));
     void enableInterrupts();
     void disableInterrupts();
     void enableDMA();
