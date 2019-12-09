@@ -415,7 +415,7 @@ class ADCL
 
 	//int getAdcCompareRes(uint8_t acmp_pin);
 	int analogReadCmp(uint8_t pin, int8_t adc_num);
-	
+
     //! Disable the compare function
     void disableCompare(int8_t adc_num);
 	
@@ -428,6 +428,19 @@ class ADCL
 	void setOffset(uint32_t offsetValue, bool signedVal, uint8_t adc_num);
 
 #endif
+
+    //////////// ERROR PRINTING /////
+    //! Prints the human-readable error from all ADC, if any.
+    void printError() {
+        adc0->printError();
+        adc1->printError();
+    }
+
+    //! Resets all errors from all ADCs, if any.
+    void resetError() {
+        adc0->resetError();
+        adc1->resetError();
+    }
 
 
 };

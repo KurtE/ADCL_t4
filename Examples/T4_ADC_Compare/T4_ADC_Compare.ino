@@ -19,7 +19,7 @@ void setup() {
   //since cmp pins are on adc4 we have to change the resoultion
   // measurement will be ready if value < 1.0V
   //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_0), 0, ADC_0); 
-  
+
   // ready if value lies out of [1.0,2.0] V
   adc->enableCompareRange(1.0*adc->getMaxValue(ADC_1)/3.3, 2.0*adc->getMaxValue(ADC_1)/3.3, 0, 0, ADC_0); 
 }

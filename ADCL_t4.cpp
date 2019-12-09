@@ -658,8 +658,8 @@ Sync_result ADCL::readSynchronizedSingle()
  //   void ADCL::stopSynchronizedContinuous();
  
  
-
-			
+	
+	
 //! Disable the compare function
 void ADCL::disableCompare(int8_t adc_num)
 {
@@ -688,7 +688,7 @@ void ADCL::disableCompare(int8_t adc_num)
 void ADCL::enableCompare(int16_t compValue, bool greaterThan, int8_t adc_num)
 {
     uint32_t tmp32;
-	
+
 	if(adc_num == 0){
 		tmp32 = ADC1_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | 		ADC_GC_ACREN_MASK);
 		/* Enable the feature. */
