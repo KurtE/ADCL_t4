@@ -119,6 +119,11 @@ class ADCL
     void setAveraging(uint8_t num, int8_t adc_num = -1);
 
 
+    //! attach Interrupt handler
+    /** function to call when conversion complete ISR is triggered
+    */
+    void attachInterrupt(void (*adc_isr)(void), int8_t adc_num = -1);
+    
     //! Enable interrupts
     /** An IRQ_ADCx Interrupt will be raised when the conversion is completed
     *  (including hardware averages and if the comparison (if any) is true).
@@ -177,7 +182,7 @@ class ADCL
         \param adc_num ADC_X ADC module
         \return the value of the pin.
     */
-    int analogRead(uint8_t pin, int8_t adc_num = -1);
+    int analogRead(uint8_t pin, int8_t adc_num = -1, uint32_t timeout = -1);
 
     //! Returns the analog value of the special internal source, such as the temperature sensor.
     /** It calls analogRead(uint8_t pin) internally, with the correct value for the pin for all boards.
@@ -191,8 +196,8 @@ class ADCL
         \param adc_num ADC_X ADC module
         \return the value of the pin.
     */
-    int analogRead(ADC_INTERNAL_SOURCE pin, int8_t adc_num = -1) __attribute__((always_inline)) {
-      return analogRead(static_cast<uint8_t>(pin), adc_num);
+    int analogRead(ADC_INTERNAL_SOURCE pin, int8_t adc_num = -1, uint32_t timeout = -1) __attribute__((always_inline)) {
+      return analogRead(static_cast<uint8_t>(pin), adc_num, timeout);
     }
 
     //! Reads the differential analog value of two pins (pinP - pinN).

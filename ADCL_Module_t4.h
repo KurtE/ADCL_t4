@@ -129,6 +129,7 @@ namespace ADC_Error {
         COMPARISON          = 1<<7, /*!< Error during the comparison. */
         WRONG_ADC           = 1<<8, /*!< A non-existent ADC module was selected. */
         SYNCH               = 1<<9, /*!< Error during a synchronized measurement. */
+		TIMEOUT             = 1<<10,/*!Timeout inside the analogRead method */
 
         CLEAR               = 0,    /*!< No error. */
     };
@@ -181,6 +182,9 @@ namespace ADC_Error {
                     break;
                 case ADC_ERROR::SYNCH:
                     Serial.print("Synchronous");
+                    break;
+				case ADC_ERROR::TIMEOUT:
+                    Serial.print("Analog read timeout ");
                     break;
                 case ADC_ERROR::OTHER:
                 case ADC_ERROR::CLEAR: // silence warnings
@@ -255,13 +259,14 @@ class ADCL_Module
     void setConversionSpeed(ADC_CONVERSION_SPEED speed);
     void setSamplingSpeed(ADC_SAMPLING_SPEED speed);
     void setAveraging(uint8_t num);
+    void attachInterrupt(void (*adc_isr)(void));
     void enableInterrupts();
     void disableInterrupts();
     void enableDMA();
     void disableDMA();
     bool isConverting();
     bool isComplete();
-    int analogRead(uint8_t pin);
+    int analogRead(uint8_t pin, uint32_t timeout = -1);
     bool startSingleRead(uint8_t pin);
     int readSingle()  __attribute__((always_inline)) {
       return (int16_t)(int32_t)_padc.R0;

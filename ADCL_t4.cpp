@@ -307,6 +307,16 @@ void ADCL::setAveraging(uint8_t num, int8_t adc_num)
     adc0->setAveraging(num);
 }
 
+// Attach interrupts
+/* Attach the specified interrupt handler for the specified ADC object*/
+void ADCL::attachInterrupt(void (*adc_isr)(void), int8_t adc_num)
+{
+  if (adc_num == 1) 
+    adc1->attachInterrupt(adc_isr);
+  else 
+    adc0->attachInterrupt(adc_isr);
+}
+
 // Enable interrupts
 /* An IRQ_ADC0 Interrupt will be raised when the conversion is completed
 *  (including hardware averages and if the comparison (if any) is true).
@@ -404,7 +414,7 @@ bool ADCL::isComplete(int8_t adc_num)
         \param adc_num ADC_X ADC module
         \return the value of the pin.
     */
-int ADCL::analogRead(uint8_t pin, int8_t adc_num)
+int ADCL::analogRead(uint8_t pin, int8_t adc_num, uint32_t timeout)
 {
   if (adc_num == -1) {
     uint8_t ch = mapPinToChannel(pin, adc_num);
@@ -418,9 +428,9 @@ int ADCL::analogRead(uint8_t pin, int8_t adc_num)
   }
 
   if (adc_num == 1) 
-    return adc1->analogRead(pin);
+    return adc1->analogRead(pin, timeout);
   else 
-    return adc0->analogRead(pin);
+    return adc0->analogRead(pin, timeout);
 }
 
 
