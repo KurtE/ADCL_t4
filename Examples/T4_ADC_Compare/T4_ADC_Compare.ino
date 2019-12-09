@@ -4,8 +4,8 @@
 #include <ADCL_t4.h>
 
 ADCL *adc;
-uint8_t inp_pin = 15;
-int8_t resolution = 12;
+uint8_t pin_cmp = A1;
+int8_t resolution = 10;
 
 void setup() {
   // put your setup code here, to run once:
@@ -13,24 +13,29 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Quick and dirty T4 Analog compare stuff");
 
-  pinMode(13, OUTPUT);
-  pinMode(2, OUTPUT);
-
-  analogWriteFrequency(2,60000);
-  analogWrite(2,127);
   adc = new ADCL;
   
-  adc->setResolution(12, 0);
+  adc->setResolution(resolution, 0);
   //since cmp pins are on adc4 we have to change the resoultion
-  //adc->enableCompare(0, 2048, true);
-  adc->enableCompareRange(0, 2048, 3000, 0,0);
+  // measurement will be ready if value < 1.0V
+  //adc->enableCompare(1.0/3.3*adc->getMaxValue(ADC_0), 0, ADC_0); 
+  
+  // ready if value lies out of [1.0,2.0] V
+  adc->enableCompareRange(1.0*adc->getMaxValue(ADC_1)/3.3, 2.0*adc->getMaxValue(ADC_1)/3.3, 0, 0, ADC_0); 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   int value;
   //value = adc->analogRead(15);
-  value = adc->analogReadCmp(15, 0);
-  Serial.println(value);
+  value = adc->analogReadCmp(pin_cmp, 0);
+  if(adc->adc0->fail_flag == ADC_ERROR::COMPARISON) {
+    //Serial.println("Some other error happened when comparison should have succeeded.");
+    //adc->adc0->printError();
+  } else {
+    Serial.println(value);
+  }
+  adc->adc0->resetError();
+
   delay(100);
 }

@@ -685,7 +685,7 @@ void ADCL::disableCompare(int8_t adc_num)
 *   \param compValue value to compare
 *   \param greaterThan or equal to true or false
 */
-void ADCL::enableCompare(int8_t adc_num, int16_t compValue, bool greaterThan)
+void ADCL::enableCompare(int16_t compValue, bool greaterThan, int8_t adc_num)
 {
     uint32_t tmp32;
 	
@@ -736,7 +736,7 @@ void ADCL::enableCompare(int8_t adc_num, int16_t compValue, bool greaterThan)
 *   \param insideRange true or false
 *   \param inclusive true or false
 */
-void ADCL::enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive)
+void ADCL::enableCompareRange(int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive, int8_t adc_num)
 {
 	uint8_t mode = 0;
 	uint32_t tmp32;
@@ -812,7 +812,7 @@ void ADCL::enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperL
  * param base   ADC number.
  * param signedVal  false for Adding, true for subtracting offset from raw value.
  */
-void ADCL::setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue)
+void ADCL::setOffset(uint32_t offsetValue, bool signedVal, uint8_t adc_num)
 {
 
     uint32_t tmp32;
