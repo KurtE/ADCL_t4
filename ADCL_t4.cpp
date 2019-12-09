@@ -658,61 +658,19 @@ Sync_result ADCL::readSynchronizedSingle()
  //   void ADCL::stopSynchronizedContinuous();
  
  
-//! enable the compare function
-int ADCL::enableCompare(uint8_t acmp_pin, uint8_t input_pin)
-{	
-	uint8_t INx;
 	
-	if(acmp_pin == ACMP3){
-		INx = 255;
-		for(uint8_t i = 0; i < sizeof(acmp3_inp_pins); i++){
-			if(input_pin == acmp3_inp_pins[i]){
-				INx = i;
-			}
-		}
-		if (INx == 255)  return ADC_ERROR_VALUE;
-		
-		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_ON);  // ACMP on
-		CMP3_MUXCR = CMP_MUXCR_PSEL(INx) | CMP_MUXCR_MSEL(7);
-		CMP3_CR1 = CMP_CR1_ENABLE ;   // enable
-		CMP3_DACCR = DACCR_ENABLE  | 32 | 0x40;  // 3v3/2 and enable
-		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
-		pinMode(ACMP3, OUTPUT);
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_14 = 1;  // ALT 1 ACMP3_OUT
-		return 0;
-	} else if(acmp_pin == ACMP4){
-		INx = 255;
-		for(uint8_t i = 0; i < sizeof(acmp4_inp_pins); i++){
-			if(input_pin == acmp4_inp_pins[i]){
-				INx = i;
-			}
-		}
-		if (INx == 255)  return ADC_ERROR_VALUE;
-		//Serial.printf("ACMP4: %d, acmp_pin: %d, INx: %d\n", ACMP4,acmp_pin, INx);
-		CCM_CCGR3 |= CCM_CCGR3_ACMP4(CCM_CCGR_ON);  // ACMP on
-		CMP4_MUXCR = CMP_MUXCR_PSEL(INx) | CMP_MUXCR_MSEL(7);
-		CMP4_CR1 = CMP_CR1_ENABLE ;   // enable
-		CMP4_DACCR = DACCR_ENABLE  | 32 | 0x40;  // 3v3/2 and enable
-		// ? do i need to configure DAC pin to see output?  output ACMP result HIGH or LOW
-		pinMode(acmp_pin, OUTPUT);
-		IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_15 = 1;  // ALT 1 4
-  		return 0;
-	} else {
-		return ADC_ERROR_VALUE;
-	}
 	
-	return 0;
-}
-			
 //! Disable the compare function
-void ADCL::disableCompare(uint8_t acmp_pin)
+void ADCL::disableCompare(int8_t adc_num)
 {
-	if(acmp_pin == ACMP3){
-		CCM_CCGR3 |= CCM_CCGR3_ACMP3(CCM_CCGR_OFF);  // ACMP on
-		CMP3_CR1 = CMP_CR1_DISABLE ;
-	} else if(acmp_pin == ACMP4){
-		CCM_CCGR3 |= CCM_CCGR3_ACMP4(CCM_CCGR_OFF);  // ACMP on
-		CMP4_CR1 = CMP_CR1_DISABLE ;
+    uint32_t tmp32;
+      
+	if(adc_num){
+		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
+		ADC2_GC = tmp32;
+	} else {
+		tmp32 = ADC1_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
+		ADC1_GC = tmp32;
 	}
 }
 
@@ -727,7 +685,7 @@ void ADCL::disableCompare(uint8_t acmp_pin)
 *   \param compValue value to compare
 *   \param greaterThan or equal to true or false
 */
-void ADCL::enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterThan)
+void ADCL::enableCompare(int16_t compValue, bool greaterThan, int8_t adc_num)
 {
     uint32_t tmp32;
 
@@ -742,7 +700,7 @@ void ADCL::enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterTha
 		ADC1_GC = tmp32;
 
 		/* Load the compare values. */
-		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV2(compValue);
+		tmp32 = ADC_CV_CV1(compValue);
 		ADC1_CV = tmp32;	
 	} else {
 		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | 		ADC_GC_ACREN_MASK);
@@ -755,7 +713,7 @@ void ADCL::enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterTha
 		ADC2_GC = tmp32;
 
 		/* Load the compare values. */
-		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV2(compValue);
+		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV1(compValue);
 		ADC2_CV = tmp32;	
 	}
 
@@ -778,7 +736,7 @@ void ADCL::enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterTha
 *   \param insideRange true or false
 *   \param inclusive true or false
 */
-void ADCL::enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive)
+void ADCL::enableCompareRange(int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive, int8_t adc_num)
 {
 	uint8_t mode = 0;
 	uint32_t tmp32;
@@ -846,15 +804,7 @@ void ADCL::enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperL
 	
 }
 
-int ADCL::getAdcCompareRes(uint8_t acmp_pin)
-{
-	if(acmp_pin == ACMP3){
-		return CMP3_SCR & CMP_SCR_COUT;
-	} else if(acmp_pin == ACMP4){
-		return CMP4_SCR & CMP_SCR_COUT;
-	}
-	return -1;
-}
+
 
 /*!
  * brief Set user defined offset.
@@ -862,7 +812,7 @@ int ADCL::getAdcCompareRes(uint8_t acmp_pin)
  * param base   ADC number.
  * param signedVal  false for Adding, true for subtracting offset from raw value.
  */
-void ADCL::setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue)
+void ADCL::setOffset(uint32_t offsetValue, bool signedVal, uint8_t adc_num)
 {
 
     uint32_t tmp32;
@@ -879,4 +829,23 @@ void ADCL::setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue)
 	}
 }
 
+
+int ADCL::analogReadCmp(uint8_t pin, int8_t adc_num)
+{
+  if (adc_num == -1) {
+    uint8_t ch = mapPinToChannel(pin, adc_num);
+    if (ch == 0xff) {
+        adc0->fail_flag |= ADC_ERROR::WRONG_PIN;
+        adc1->fail_flag |= ADC_ERROR::WRONG_PIN;
+        return ADC_ERROR_VALUE;      
+    }
+    adc_num = (ch & 0x80)? 1 : 0; // assume adc0 unless it is not supportd on adc0 
+
+  }
+
+  if (adc_num == 1) 
+    return adc1->getAdcCompareRes(pin);
+  else 
+    return adc0->getAdcCompareRes(pin);
+}
 #endif

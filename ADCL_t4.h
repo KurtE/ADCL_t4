@@ -393,7 +393,7 @@ class ADCL
     *   \param compValue value to compare
     *   \param greaterThan or equal to true or false
     */
-    void enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterThan);
+    void enableCompare(int16_t compValue, bool greaterThan, int8_t adc_num);
 
     //! Enable the compare function to a range
     /** A conversion will be completed only when the ADC value is inside (insideRange=1) or outside (=0)
@@ -411,15 +411,13 @@ class ADCL
     *   \param insideRange true or false
     *   \param inclusive true or false
     */
-    void enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive);
+    void enableCompareRange(int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive, int8_t adc_num);
 
-	int getAdcCompareRes(uint8_t acmp_pin);
+	//int getAdcCompareRes(uint8_t acmp_pin);
+	int analogReadCmp(uint8_t pin, int8_t adc_num);
 
     //! Disable the compare function
-    void disableCompare(uint8_t acmp_pin);
-	
-    //! enable the compare function
-    int enableCompare(uint8_t acmp_pin, uint8_t input_pin);
+    void disableCompare(int8_t adc_num);
 	
 	/*!
 	* brief Set user defined offset.
@@ -427,7 +425,7 @@ class ADCL
 	* param base   ADC number.
 	* param signedVal  false for Adding, true for subtracting offset from raw value.
 	*/
-	void setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue);
+	void setOffset(uint32_t offsetValue, bool signedVal, uint8_t adc_num);
 
 #endif
 
