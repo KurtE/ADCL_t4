@@ -393,7 +393,7 @@ class ADCL
     *   \param compValue value to compare
     *   \param greaterThan or equal to true or false
     */
-    void enableCompareValue(int8_t adc_num, int16_t compValue, bool greaterThan);
+    void enableCompare(int8_t adc_num, int16_t compValue, bool greaterThan);
 
     //! Enable the compare function to a range
     /** A conversion will be completed only when the ADC value is inside (insideRange=1) or outside (=0)
@@ -413,13 +413,14 @@ class ADCL
     */
     void enableCompareRange(int8_t adc_num, int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive);
 
-	int getAdcCompareRes(uint8_t acmp_pin);
-
+	//int getAdcCompareRes(uint8_t acmp_pin);
+	int analogReadCmp(uint8_t pin, int8_t adc_num);
+	
     //! Disable the compare function
     void disableCompare(uint8_t acmp_pin);
 	
     //! enable the compare function
-    int enableCompare(uint8_t acmp_pin, uint8_t input_pin);
+    //int enableCompare(uint8_t acmp_pin, uint8_t input_pin);
 	
 	/*!
 	* brief Set user defined offset.
@@ -430,19 +431,6 @@ class ADCL
 	void setOffset(uint8_t adc_num, bool signedVal, uint32_t offsetValue);
 
 #endif
-
-    //////////// ERROR PRINTING /////
-    //! Prints the human-readable error from all ADC, if any.
-    void printError() {
-        adc0->printError();
-        adc1->printError();
-    }
-
-    //! Resets all errors from all ADCs, if any.
-    void resetError() {
-        adc0->resetError();
-        adc1->resetError();
-    }
 
 
 };

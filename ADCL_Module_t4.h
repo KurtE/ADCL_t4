@@ -275,6 +275,8 @@ class ADCL_Module
 
     //! Stops continuous conversion
     void stopContinuous();
+	
+	int getAdcCompareRes(uint8_t acmp_pin);
 
 };
 

@@ -162,7 +162,7 @@ void ADCL_Module::disableDMA()
 
 bool ADCL_Module::isConverting()
 {
-  return (_padc.GS & ADC_GS_ADACT) != 0;
+  return (_padc.HS & ADC_HS_COCO0) == 0;
 }
 
 
@@ -180,7 +180,7 @@ int ADCL_Module::analogRead(uint8_t pin)
     return ADC_ERROR_VALUE;
   }
 
-  _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
+  _padc.HC0 = ch;
   while (!(_padc.HS & ADC_HS_COCO0)) ; // wait
   return _padc.R0;
 }  
@@ -194,7 +194,7 @@ bool ADCL_Module::startSingleRead(uint8_t pin)
     fail_flag |= ADC_ERROR::WRONG_PIN;
     return false;
   }
-  _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
+  _padc.HC0 = ch;
   return true;
 }
 
@@ -211,7 +211,7 @@ bool ADCL_Module::startContinuous(uint8_t pin) {
     _padc.GC |=  ADC_GC_ADCO;  // enable continuous updates.      
     __enable_irq();
 
-    _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
+    _padc.HC0 = ch;
 
     return true;
 }
@@ -240,5 +240,21 @@ void ADCL_Module::stopContinuous() {
 }
 
 
+int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
+{
+  uint8_t ch = ADCL::mapPinToChannel(acmp_pin, 0);
+  if (ch == 0xff) {
+    fail_flag |= ADC_ERROR::WRONG_PIN;
+    return ADC_ERROR_VALUE;
+  }
+	int temp;
+  _padc.HC0 = ch;
 
+  if(!ADC_HS_COCO0) {
+	  return -99;
+  } else {
+	return _padc.R0;
+  }
+  return -1;
+} 
 
