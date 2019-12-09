@@ -664,12 +664,12 @@ Sync_result ADCL::readSynchronizedSingle()
 void ADCL::disableCompare(int8_t adc_num)
 {
     uint32_t tmp32;
-
-    tmp32 = base->GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
-        
+      
 	if(adc_num){
+		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
 		ADC2_GC = tmp32;
 	} else {
+		tmp32 = ADC1_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | ADC_GC_ACREN_MASK);
 		ADC1_GC = tmp32;
 	}
 }
@@ -700,7 +700,7 @@ void ADCL::enableCompare(int8_t adc_num, int16_t compValue, bool greaterThan)
 		ADC1_GC = tmp32;
 
 		/* Load the compare values. */
-		tmp32 = ADC_CV_CV1(compValue) | ADC_CV_CV2(compValue);
+		tmp32 = ADC_CV_CV1(compValue);
 		ADC1_CV = tmp32;	
 	} else {
 		tmp32 = ADC2_GC & ~(ADC_GC_ACFE_MASK | ADC_GC_ACFGT_MASK | 		ADC_GC_ACREN_MASK);

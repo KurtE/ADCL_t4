@@ -417,7 +417,7 @@ class ADCL
 	int analogReadCmp(uint8_t pin, int8_t adc_num);
 	
     //! Disable the compare function
-    void disableCompare(uint8_t acmp_pin);
+    void disableCompare(int8_t adc_num);
 	
     //! enable the compare function
     //int enableCompare(uint8_t acmp_pin, uint8_t input_pin);

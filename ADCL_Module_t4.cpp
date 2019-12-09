@@ -239,7 +239,7 @@ void ADCL_Module::stopContinuous() {
     return;
 }
 
-
+elapsedMillis timeout;
 int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
 {
   uint8_t ch = ADCL::mapPinToChannel(acmp_pin, 0);
@@ -247,14 +247,15 @@ int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
     fail_flag |= ADC_ERROR::WRONG_PIN;
     return ADC_ERROR_VALUE;
   }
-	int temp;
+  timeout = 0;
   _padc.HC0 = ch;
-
-  if(!ADC_HS_COCO0) {
-	  return -99;
-  } else {
-	return _padc.R0;
+  while (!(_padc.HS & ADC_HS_COCO0)){
+		if(timeout > 100){
+			timeout = 0; // wait
+			return 0;
+		}
   }
-  return -1;
+  int temp = _padc.R0;
+  return temp;
 } 
 

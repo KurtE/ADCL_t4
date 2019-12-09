@@ -5,7 +5,7 @@
 
 ADCL *adc;
 uint8_t inp_pin = 15;
-int8_t resolution = 10;
+int8_t resolution = 12;
 
 void setup() {
   // put your setup code here, to run once:
@@ -22,14 +22,15 @@ void setup() {
   
   adc->setResolution(12, 0);
   //since cmp pins are on adc4 we have to change the resoultion
-  adc->enableCompare(0, 4000, false);
+  //adc->enableCompare(0, 2048, true);
+  adc->enableCompareRange(0, 2048, 3000, 0,0);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   int value;
   //value = adc->analogRead(15);
-  value = adc->analogReadCmp(15,0);
+  value = adc->analogReadCmp(15, 0);
   Serial.println(value);
   delay(100);
 }
