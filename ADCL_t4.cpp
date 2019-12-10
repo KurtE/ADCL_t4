@@ -840,22 +840,4 @@ void ADCL::setOffset(uint32_t offsetValue, bool signedVal, uint8_t adc_num)
 }
 
 
-int ADCL::analogReadCmp(uint8_t pin, int8_t adc_num)
-{
-  if (adc_num == -1) {
-    uint8_t ch = mapPinToChannel(pin, adc_num);
-    if (ch == 0xff) {
-        adc0->fail_flag |= ADC_ERROR::WRONG_PIN;
-        adc1->fail_flag |= ADC_ERROR::WRONG_PIN;
-        return ADC_ERROR_VALUE;      
-    }
-    adc_num = (ch & 0x80)? 1 : 0; // assume adc0 unless it is not supportd on adc0 
-
-  }
-
-  if (adc_num == 1) 
-    return adc1->getAdcCompareRes(pin);
-  else 
-    return adc0->getAdcCompareRes(pin);
-}
 #endif
