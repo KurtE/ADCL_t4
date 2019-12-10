@@ -17,6 +17,7 @@
 //---------------------------
 #include <stdint.h>
 #include <Arduino.h>
+#ifndef IMXRT_ADC1S
 typedef struct {
     volatile uint32_t HC0;
     volatile uint32_t HC1;
@@ -45,7 +46,7 @@ typedef struct {
 
 #define IMXRT_ADC1S         (*(IMXRT_ADCS_t *)0x400C4000)
 #define IMXRT_ADC2S         (*(IMXRT_ADCS_t *)0x400C8000)
-
+#endif 
 
 #define ADC_NUM_ADCS (2)
 #define ADC_USE_DMA (1)
