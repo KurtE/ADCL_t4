@@ -418,9 +418,6 @@ class ADCL
     */
     void enableCompareRange(int16_t lowerLimit, int16_t upperLimit, bool insideRange, bool inclusive, int8_t adc_num);
 
-	//int getAdcCompareRes(uint8_t acmp_pin);
-	int analogReadCmp(uint8_t pin, int8_t adc_num);
-
     //! Disable the compare function
     void disableCompare(int8_t adc_num);
 	

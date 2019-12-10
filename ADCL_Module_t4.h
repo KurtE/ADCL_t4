@@ -17,36 +17,6 @@
 //---------------------------
 #include <stdint.h>
 #include <Arduino.h>
-#ifndef IMXRT_ADC1S
-typedef struct {
-    volatile uint32_t HC0;
-    volatile uint32_t HC1;
-    volatile uint32_t HC2;
-    volatile uint32_t HC3;
-    volatile uint32_t HC4;
-    volatile uint32_t HC5;
-    volatile uint32_t HC6;
-    volatile uint32_t HC7;
-    volatile uint32_t HS; 
-    volatile uint32_t R0; 
-    volatile uint32_t R1; 
-    volatile uint32_t R2; 
-    volatile uint32_t R3; 
-    volatile uint32_t R4; 
-    volatile uint32_t R5; 
-    volatile uint32_t R6; 
-    volatile uint32_t R7; 
-    volatile uint32_t CFG;
-    volatile uint32_t GC; 
-    volatile uint32_t GS; 
-    volatile uint32_t CV; 
-    volatile uint32_t OFS;
-    volatile uint32_t CAL;
-} IMXRT_ADCS_t;
-
-#define IMXRT_ADC1S         (*(IMXRT_ADCS_t *)0x400C4000)
-#define IMXRT_ADC2S         (*(IMXRT_ADCS_t *)0x400C8000)
-#endif 
 
 #define ADC_NUM_ADCS (2)
 #define ADC_USE_DMA (1)
@@ -282,8 +252,6 @@ class ADCL_Module
     //! Stops continuous conversion
     void stopContinuous();
 	
-	int getAdcCompareRes(uint8_t acmp_pin);
-
 };
 
 #endif
