@@ -280,5 +280,7 @@ int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
   fail_flag = ADC_ERROR::CLEAR;
   int temp = _padc.R0;
   return temp;
+
 }
+
 
