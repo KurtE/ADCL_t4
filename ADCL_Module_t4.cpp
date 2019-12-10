@@ -179,8 +179,8 @@ bool ADCL_Module::isComplete()
   return (_padc.HS & ADC_HS_COCO0) != 0;
 }
 
-
-int ADCL_Module::analogRead(uint8_t pin)
+elapsedMillis timeout;
+int ADCL_Module::analogRead(uint8_t pin, uint32_t TIMEOUT)
 {
   uint8_t ch = ADCL::mapPinToChannel(pin, _adc_num);
   if (ch == 0xff) {
@@ -188,11 +188,25 @@ int ADCL_Module::analogRead(uint8_t pin)
     return ADC_ERROR_VALUE;
   }
 
+  timeout = 0;
   _padc.HC0 = (_padc.HC0 & ADC_HC_AIEN) | ch;
-  while (!(_padc.HS & ADC_HS_COCO0)) ; // wait
-  return _padc.R0;
+  //while (!(_padc.HS & ADC_HS_COCO0)) ; // wait
+  if(TIMEOUT >= 0){
+	  while (!(_padc.HS & ADC_HS_COCO0)){
+			if(timeout > TIMEOUT){
+				timeout = 0; // wait
+				fail_flag |= ADC_ERROR::TIMEOUT;
+				return ADC_ERROR_VALUE;
+			}
+	  }
+	  fail_flag = ADC_ERROR::CLEAR;
+	  return _padc.R0;
+  } else {
+	  while (!(_padc.HS & ADC_HS_COCO0));
+	  return _padc.R0;
+  }
+  
 }  
-
 
 
 bool ADCL_Module::startSingleRead(uint8_t pin)
@@ -247,7 +261,6 @@ void ADCL_Module::stopContinuous() {
     return;
 }
 
-elapsedMillis timeout;
 int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
 {
   uint8_t ch = ADCL::mapPinToChannel(acmp_pin, 0);
@@ -267,5 +280,7 @@ int ADCL_Module::getAdcCompareRes(uint8_t acmp_pin)
   fail_flag = ADC_ERROR::CLEAR;
   int temp = _padc.R0;
   return temp;
-} 
+
+}
+
 

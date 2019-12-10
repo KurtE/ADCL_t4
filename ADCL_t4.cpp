@@ -414,7 +414,7 @@ bool ADCL::isComplete(int8_t adc_num)
         \param adc_num ADC_X ADC module
         \return the value of the pin.
     */
-int ADCL::analogRead(uint8_t pin, int8_t adc_num)
+int ADCL::analogRead(uint8_t pin, int8_t adc_num, uint32_t timeout)
 {
   if (adc_num == -1) {
     uint8_t ch = mapPinToChannel(pin, adc_num);
@@ -428,9 +428,9 @@ int ADCL::analogRead(uint8_t pin, int8_t adc_num)
   }
 
   if (adc_num == 1) 
-    return adc1->analogRead(pin);
+    return adc1->analogRead(pin, timeout);
   else 
-    return adc0->analogRead(pin);
+    return adc0->analogRead(pin, timeout);
 }
 
 
