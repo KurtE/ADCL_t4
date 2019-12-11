@@ -348,7 +348,7 @@ void ADCL::disableInterrupts(int8_t adc_num)
 void ADCL::enableDMA(int8_t adc_num) 
 {
   if (adc_num == 1) 
-    adc0->enableDMA();
+    adc1->enableDMA();
   else 
     adc0->enableDMA();
 }
