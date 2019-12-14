@@ -28,7 +28,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   int value;
   //value = adc->analogRead(15);
-  value = adc->analogReadCmp(pin_cmp, 0);
+  value = adc->analogRead(pin_cmp, 0);
   if(adc->adc0->fail_flag == ADC_ERROR::COMPARISON) {
     //Serial.println("Some other error happened when comparison should have succeeded.");
     //adc->adc0->printError();
