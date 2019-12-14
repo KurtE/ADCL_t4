@@ -301,7 +301,7 @@ void timer_callback(void) {
         ultoa(adc1_val, num_buf, 10);
         output_bytes_to_csv_buffer(num_buf);
         if (ADCPinIndex == (sizeof(ADC0_pins) - 1)) {
-            output_bytes_to_csv_buffer("\n\r");
+            output_bytes_to_csv_buffer("\n");
             if (!continue_to_collect_data) {
                 move_adc_buffer_to_sd_list(false);
                 timer.end();
