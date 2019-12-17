@@ -13,7 +13,6 @@ class ADCL
   protected:
     friend class ADCL_Module;
     static const uint8_t t4_pin_to_channel[];
-    static uint8_t mapPinToChannel(uint8_t pin, int8_t adc_num = -1);
 
 
   private:
@@ -23,6 +22,8 @@ class ADCL
 
 
   public:
+    // may repackage...
+    static uint8_t mapPinToChannel(uint8_t pin, int8_t adc_num = -1);
 
     /** Default constructor */
     ADCL() : _adc0(IMXRT_ADC1S, 0), _adc1(IMXRT_ADC2S, 1), adc0(&_adc0), adc1(&_adc1) {};

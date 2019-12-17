@@ -32,6 +32,7 @@
 // lets wrap some of our Dmasettings stuff into helper class
 class AnalogBufferDMA {
     // keep our settings and the like:
+public: // At least temporary to play with dma settings. 
     DMASetting  _dmasettings_adc[2];
     DMAChannel  _dmachannel_adc;
 
@@ -44,7 +45,7 @@ public:
     AnalogBufferDMA(volatile uint16_t *buffer1, uint16_t buffer1_count, volatile uint16_t *buffer2, uint16_t buffer2_count) :
             _buffer1(buffer1), _buffer1_count(buffer1_count), _buffer2(buffer2), _buffer2_count(buffer2_count) {};
     
-    void init(ADCL *adc, int8_t adc_num = -1);
+    void init(ADCL *adc, int8_t adc_num = -1, uint8_t dmamux_source=0xff);
     inline volatile uint16_t *bufferLastISRFilled() {return (_interrupt_count & 1)? _buffer1 : _buffer2;}
     inline uint16_t bufferCountLastISRFilled() {return (_interrupt_count & 1)? _buffer1_count : _buffer2_count;}
     inline uint32_t interruptCount() {return _interrupt_count;}

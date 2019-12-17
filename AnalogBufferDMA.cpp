@@ -33,7 +33,7 @@ AnalogBufferDMA *AnalogBufferDMA::_activeObjectPerADC[2] = {nullptr, nullptr};
 
 
 
-void AnalogBufferDMA::init(ADCL *adc, int8_t adc_num)
+void AnalogBufferDMA::init(ADCL *adc, int8_t adc_num,  uint8_t dmamux_source)
 {
     // enable DMA and interrupts
     Serial.println("before enableDMA"); Serial.flush();
@@ -57,11 +57,11 @@ void AnalogBufferDMA::init(ADCL *adc, int8_t adc_num)
     if (adc_num == 1) {
     	_activeObjectPerADC[1] = this;
 	    _dmachannel_adc.attachInterrupt(&adc_1_dmaISR);
-	    _dmachannel_adc.triggerAtHardwareEvent(DMAMUX_SOURCE_ADC2); // start DMA channel when ADC finishes a conversion
+	    _dmachannel_adc.triggerAtHardwareEvent((dmamux_source == 0xff)? DMAMUX_SOURCE_ADC2 : dmamux_source); // start DMA channel when ADC finishes a conversion
 	} else {		
     	_activeObjectPerADC[0] = this;
 	    _dmachannel_adc.attachInterrupt(&adc_0_dmaISR);
-	    _dmachannel_adc.triggerAtHardwareEvent(DMAMUX_SOURCE_ADC1); // start DMA channel when ADC finishes a conversion
+	    _dmachannel_adc.triggerAtHardwareEvent((dmamux_source == 0xff)? DMAMUX_SOURCE_ADC1 : dmamux_source); // start DMA channel when ADC finishes a conversion
 	}
     //arm_dcache_flush((void*)dmaChannel, sizeof(dmaChannel));
     _dmachannel_adc.enable();
