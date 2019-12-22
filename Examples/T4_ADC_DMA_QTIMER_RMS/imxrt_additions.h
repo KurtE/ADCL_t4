@@ -1,21 +1,21 @@
 // Some definitions, that hopefully are added to IMXRT.h
 #ifndef ADC_ETC_CTRL_SOFTRST
 typedef struct {
-  uint32_t CTRL;              // offset 0
-  uint32_t DONE0_1_IRQ;       // offset004
-  uint32_t DONE2_ERR_IRQ;     // offset008
-  uint32_t DMA_CTRL;          // offset00C
-    struct {
-    uint32_t CTRL;            //offset010
-    uint32_t COUNTER;         //offset014
-    uint32_t CHAIN_1_0;
-    uint32_t CHAIN_3_2;
-    uint32_t CHAIN_5_4;
-    uint32_t CHAIN_7_6;
-    uint32_t RESULT_1_0;
-    uint32_t RESULT_3_2;
-    uint32_t RESULT_5_4;
-    uint32_t RESULT_7_6;
+  volatile uint32_t CTRL;              // offset 0
+  volatile uint32_t DONE0_1_IRQ;       // offset004
+  volatile uint32_t DONE2_ERR_IRQ;     // offset008
+  volatile uint32_t DMA_CTRL;          // offset00C
+  struct {
+    volatile uint32_t CTRL;            //offset010
+    volatile uint32_t COUNTER;         //offset014
+    volatile uint32_t CHAIN_1_0;
+    volatile uint32_t CHAIN_3_2;
+    volatile uint32_t CHAIN_5_4;
+    volatile uint32_t CHAIN_7_6;
+    volatile uint32_t RESULT_1_0;
+    volatile uint32_t RESULT_3_2;
+    volatile uint32_t RESULT_5_4;
+    volatile uint32_t RESULT_7_6;
   } TRIG[7];
 } IMXRT_ADC_ETC_t;
 
