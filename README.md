@@ -1,3 +1,6 @@
+**Warning: Teeny 4 support has been added to the official ADC library, as such this
+project is no longer active**
+
 ADCL_t4
 ===
 
